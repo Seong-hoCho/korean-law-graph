@@ -3,9 +3,11 @@
 법률 하나를 중심으로 **시행령·시행규칙 위임, 조문 사이 인용, 다른 법령 인용, 판례 연결**을 한 그래프에 모은 인터랙티브 지도입니다.
 
 - 지도 보기: https://seong-hocho.github.io/korean-law-graph/
+  - [상법 중심 관련 법령 지도](https://seong-hocho.github.io/korean-law-graph/multi-commercial.html): 상법·보험업법·근로자퇴직급여 보장법 사이의 조문 인용과, 두 법 이상을 함께 다룬 판례
   - [개인정보 보호법](https://seong-hocho.github.io/korean-law-graph/privacy.html): 법 128조 · 시행령 142조 · 판례 130건
   - [보험업법](https://seong-hocho.github.io/korean-law-graph/insurance.html): 법 253조 · 시행령 146조 · 시행규칙 61조 · 판례 145건
   - [상법](https://seong-hocho.github.io/korean-law-graph/commercial.html): 법 1,184조 · 시행령 59조 · 판례 456건 (본문에 상법이 나오는 판례 5,219건 중 최근 1,000건에서 추출)
+  - [근로자퇴직급여 보장법](https://seong-hocho.github.io/korean-law-graph/retirement.html): 법 68조 · 시행령 79조 · 시행규칙 19조 · 판례 95건
 
 법 조문은 장 순서대로 안쪽 원에 놓입니다. 시행령·시행규칙·판례는 연결된 법 조문 쪽 바깥 고리에 놓이므로, 판례가 몰린 방향이 곧 분쟁이 많은 조문입니다. 조문이나 판례를 누르면 연결된 것만 남고, 옆 패널에 원문과 연결 목록이 나옵니다.
 
@@ -24,7 +26,17 @@ Python 3.10 이상, 외부 패키지는 없습니다.
 
 ```bash
 python build_graph.py "상법" data/commercial.json
+# 판결문이 약칭을 쓰는 법은 --alias 로 약칭을 알려 준다
+python build_graph.py "근로자퇴직급여 보장법" data/retirement.json --alias 퇴직급여법
 python make_page.py data/commercial.json docs/commercial.html
+```
+
+여러 법을 엮은 지도는 각 법의 JSON을 만든 뒤 `build_multi.py`로 묶습니다. 첫 법이 가운데에 놓이고, `:` 뒤는 판결문 약칭입니다.
+
+```bash
+python build_multi.py data/multi-commercial.json 상법=data/commercial.json \
+    보험업법=data/insurance.json "근로자퇴직급여 보장법=data/retirement.json:퇴직급여법"
+python make_page.py data/multi-commercial.json docs/multi-commercial.html
 ```
 
 첫 화면 카드의 축소 그림은 [Playwright](https://playwright.dev)로 뽑습니다(`docs/thumbs/*.svg`).
@@ -41,7 +53,8 @@ node tools/thumbs.js commercial
 |---|---|
 | `lawapi.py` | 법제처 Open API 호출과 캐시 |
 | `build_graph.py` | 조문·위임·인용·판례를 모아 그래프 JSON 생성 |
-| `make_page.py` | 그래프 JSON을 `graph_template.html`에 넣어 단일 HTML 생성 |
+| `build_multi.py` | 여러 법의 JSON을 엮어 법 사이 인용·공유 판례 그래프 JSON 생성 |
+| `make_page.py` | 그래프 JSON을 `graph_template.html`(여러 법 지도는 `multi_template.html`)에 넣어 단일 HTML 생성 |
 | `data/*.json` | 생성된 그래프 데이터 |
 | `tools/thumbs.js` | 지도 페이지에서 첫 화면용 축소 그림(SVG) 생성 |
 | `docs/` | GitHub Pages로 공개되는 페이지 |
