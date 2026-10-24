@@ -1,6 +1,8 @@
 """법령 상호참조 그래프 데이터 생성.
 
 사용: python build_graph.py "보험업법" data/insurance.json
+      python build_graph.py "근로자퇴직급여 보장법" data/retirement.json --alias 퇴직급여법
+      (--alias: 판결문이 쓰는 약칭. 여러 개면 쉼표로)
 
 노드: 법 조문(L), 시행령 조문(D), 시행규칙 조문(R), 판례(P), 외부 법령(X)
 엣지: delegates(위임), cites(조문 인용), external(타법 인용), precedent(판례→조문)
@@ -132,9 +134,9 @@ def law_refs(text, prefix, self_id, main):
     return refs
 
 
-def prec_refs(text, main):
-    """판례 텍스트에서 이 법령 계열 조문만 추출(엄격: 법령명 직후 또는 연결어로 이어진 것만)."""
-    name = r"\s*".join(map(re.escape, main.replace(" ", "")))
+def prec_refs(text, main, aliases=()):
+    """판례 텍스트에서 이 법령 계열 조문만 추출(엄격: 법령명·약칭 직후 또는 연결어로 이어진 것만)."""
+    name = "(?:" + "|".join(r"\s*".join(map(re.escape, n.replace(" ", ""))) for n in (main, *aliases)) + ")"
     own_end = re.compile(rf"(?<![가-힣])({name}(?:\s*시행령|\s*시행규칙)?)\s*(?:은|는|이|가|의|에|에서|상|및|,)?\s*$")
     text = clean(text)
     refs, prev_end, cur = set(), 0, None
@@ -186,7 +188,7 @@ def precedents(main):
     return out, total
 
 
-def main(main_name, out_path):
+def main(main_name, out_path, aliases=()):
     tiers = {}
     for p in HEAD:
         mst, ef = find_mst(main_name + SUFFIX[p])
@@ -243,7 +245,7 @@ def main(main_name, out_path):
         for field, label in (("참조조문", "참조조문"), (None, "판결요지"), ("판례내용", "판례내용")):
             txt = p.get(field, "") if field else (p.get("판시사항", "") + " " + p.get("판결요지", ""))
             # 현행 최대 조번호를 넘는 번호는 다른 법 조문을 잘못 잡은 것으로 보고 버림
-            refs = {r for r in prec_refs(txt or "", main_name)
+            refs = {r for r in prec_refs(txt or "", main_name, aliases)
                     if r[0] in max_no and int(r[2:].split("-")[0]) <= max_no[r[0]]}
             if refs:
                 basis = label
@@ -293,4 +295,10 @@ def main(main_name, out_path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    args = [a for a in sys.argv[1:] if not a.startswith("--alias")]
+    alias = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--alias=")), None)
+    if "--alias" in sys.argv:
+        i = sys.argv.index("--alias")
+        alias = sys.argv[i + 1]
+        args.remove(alias)
+    main(args[0], args[1], tuple(a.strip() for a in (alias or "").split(",") if a.strip()))
