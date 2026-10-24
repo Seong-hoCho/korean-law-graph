@@ -109,8 +109,8 @@ def main(out_path, specs):
             continue
         pid = "P|" + it["판례일련번호"]
         nodes_p.append({
-            "id": pid, "law": "P", "kind": "P", "label": it["사건번호"], "title": it.get("사건명", ""),
-            "court": it.get("법원명", ""), "date": it.get("선고일자", ""),
+            "id": pid, "law": "P", "kind": "P", "label": B.prec_field(it, p, "사건번호"), "title": it.get("사건명", ""),
+            "court": B.prec_field(it, p, "법원명"), "date": B.prec_date(it, p),
             "text": B.clean(p.get("판시사항") or "").strip()[:700],
             "url": f"https://www.law.go.kr/precInfoP.do?precSeq={it['판례일련번호']}",
         })

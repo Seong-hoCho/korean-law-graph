@@ -56,26 +56,27 @@ footer a { color: var(--law); }
     <h1>한국 법령 참조 지도</h1>
     <p>법률 조문을 장 순서대로 둥글게 놓고, 시행령·시행규칙 위임, 조문 사이 인용, 다른 법령 인용, 판례 연결을 한 그림에 모았습니다. 조문이나 판례를 누르면 연결된 것만 남고 원문과 연결 목록이 나옵니다.</p>
   </header>
+  <!-- maps:start -->
   <a class="map wide" href="multi-commercial.html">
     <img src="thumbs/multi-commercial.svg" alt="" width="600" height="600" loading="lazy">
     <div class="wide-body">
       <h2>상법 중심 관련 법령 지도</h2>
       <div class="nums"><span><span class="dot" style="background:var(--law)"></span>상법</span><span><span class="dot" style="background:var(--rule)"></span>보험업법</span><span><span class="dot" style="background:var(--decree)"></span>근로자퇴직급여 보장법</span></div>
-      <p>세 법이 서로의 조문을 가리키는 곳과 여러 법을 함께 다룬 판례를 한 그림에 모았습니다. 보험업법은 상법 조문을 218곳에서 끌어다 쓰고, 근로자퇴직급여 보장법은 보험업법과만 직접 이어집니다(13곳). 세 법 가운데 두 법 이상을 함께 다룬 판례는 51건입니다.</p>
+      <p>상법·보험업법·근로자퇴직급여 보장법 사이에서 서로의 조문을 가리키는 곳과 여러 법을 함께 다룬 판례를 한 그림에 모았습니다. 법 사이 인용은 보험업법 → 상법 218곳, 근로자퇴직급여 보장법 → 보험업법 7곳, 보험업법 → 근로자퇴직급여 보장법 6곳, 상법 → 보험업법 2곳이고, 두 법 이상을 함께 다룬 판례는 51건입니다.</p>
     </div>
   </a>
   <section class="maps">
     <a class="map" href="privacy.html">
       <img src="thumbs/privacy.svg" alt="" width="600" height="600" loading="lazy">
       <h2>개인정보 보호법</h2>
-      <div class="nums"><span><span class="dot" style="background:var(--law)"></span>법 128조</span><span><span class="dot" style="background:var(--decree)"></span>시행령 142조</span><span><span class="dot" style="background:var(--prec)"></span>판례 130건</span></div>
+      <div class="nums"><span><span class="dot" style="background:var(--law)"></span>법 127조</span><span><span class="dot" style="background:var(--decree)"></span>시행령 142조</span><span><span class="dot" style="background:var(--prec)"></span>판례 130건</span></div>
       <p>판례가 가장 많이 다룬 조문은 제71조(벌칙)와 제59조(금지행위)입니다.</p>
     </a>
     <a class="map" href="insurance.html">
       <img src="thumbs/insurance.svg" alt="" width="600" height="600" loading="lazy">
       <h2>보험업법</h2>
       <div class="nums"><span><span class="dot" style="background:var(--law)"></span>법 253조</span><span><span class="dot" style="background:var(--decree)"></span>시행령 146조</span><span><span class="dot" style="background:var(--rule)"></span>시행규칙 61조</span><span><span class="dot" style="background:var(--prec)"></span>판례 145건</span></div>
-      <p>판례가 가장 많이 다룬 조문은 제158조(해산 후의 보험금 지급)이고, 2020년에 삭제된 제102조가 그다음입니다.</p>
+      <p>판례가 가장 많이 다룬 조문은 제158조(해산 후의 보험금 지급)와 2020년에 삭제된 제102조입니다.</p>
     </a>
     <a class="map" href="commercial.html">
       <img src="thumbs/commercial.svg" alt="" width="600" height="600" loading="lazy">
@@ -89,7 +90,14 @@ footer a { color: var(--law); }
       <div class="nums"><span><span class="dot" style="background:var(--law)"></span>법 68조</span><span><span class="dot" style="background:var(--decree)"></span>시행령 79조</span><span><span class="dot" style="background:var(--rule)"></span>시행규칙 19조</span><span><span class="dot" style="background:var(--prec)"></span>판례 95건</span></div>
       <p>판례가 가장 많이 다룬 조문은 제8조(퇴직금제도의 설정 등)와 제9조(퇴직금의 지급 등)입니다.</p>
     </a>
+    <a class="map" href="criminal.html">
+      <img src="thumbs/criminal.svg" alt="" width="600" height="600" loading="lazy">
+      <h2>형법</h2>
+      <div class="nums"><span><span class="dot" style="background:var(--law)"></span>법 402조</span><span><span class="dot" style="background:var(--prec)"></span>판례 909건</span></div>
+      <p>최근 판례가 가장 많이 다룬 조문은 제37조(경합범)와 제30조(공동정범)입니다.</p>
+    </a>
   </section>
+<!-- maps:end -->
   <footer>
     <p>자료: 법제처 국가법령정보 공동활용 Open API. 연결은 자동 추출이라 빠지거나 잘못 잡힌 것이 있을 수 있으니, 실무에는 <a href="https://www.law.go.kr">국가법령정보센터</a> 원문을 확인해 주세요. 만드는 방법과 스크립트는 <a href="https://github.com/Seong-hoCho/korean-law-graph">저장소</a>에 있습니다.</p>
   </footer>

@@ -55,6 +55,22 @@ def clean(text):
     return re.sub(r"[ \t]+", " ", text)
 
 
+def prec_date(it, detail=None):
+    """판례 선고일자(YYYY.MM.DD). 법제처는 모르는 날짜를 '0001.01.01'로 주므로 빈 값으로 바꾸고,
+    목록에 없으면 상세(YYYYMMDD)에서 찾는다."""
+    for d in ((it.get("선고일자") or "").strip(), ((detail or {}).get("선고일자") or "").strip()):
+        if re.fullmatch(r"\d{8}", d):
+            d = f"{d[:4]}.{d[4:6]}.{d[6:]}"
+        if d and not d.startswith("0001"):
+            return d
+    return ""
+
+
+def prec_field(it, detail, key):
+    """목록 값이 비면 상세 값으로. 근로복지공단 산재판례 등은 목록에 사건번호·법원명이 비어 온다."""
+    return (it.get(key) or "").strip() or ((detail or {}).get(key) or "").strip()
+
+
 def find_mst(name):
     d = L.search("law", name, display=50)["LawSearch"]
     for x in L.as_list(d.get("law")):
@@ -257,10 +273,10 @@ def main(main_name, out_path, aliases=()):
         summary = clean(p.get("판시사항") or "").strip()
         nodes[pid] = {
             "id": pid, "kind": "P",
-            "label": it["사건번호"],
+            "label": prec_field(it, p, "사건번호"),
             "title": it.get("사건명", ""),
-            "court": it.get("법원명", ""),
-            "date": it.get("선고일자", ""),
+            "court": prec_field(it, p, "법원명"),
+            "date": prec_date(it, p),
             "caseType": it.get("사건종류명", ""),
             "basis": basis,
             "text": summary[:700],
@@ -282,7 +298,7 @@ def main(main_name, out_path, aliases=()):
         "precedentsListed": len(precs),
         "precedentsTotal": prec_total,
         "precedentsUnavailable": unavailable,
-        "precedentsFrom": min((x["선고일자"] for x in precs if x.get("선고일자")), default=""),
+        "precedentsFrom": min((prec_date(x) for x in precs if prec_date(x)), default=""),
         "precedentBasis": basis_count,
         "source": "법제처 국가법령정보 공동활용 Open API (DRF)",
     }
