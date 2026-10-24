@@ -20,9 +20,13 @@ def check_data(page, data):
     dangling = [e for e in data["edges"] if e["source"] not in ids or e["target"] not in ids]
     if dangling:
         problems.append(f"{page}: 양 끝 노드가 없는 연결 {len(dangling)}개 (예: {dangling[0]['source']} → {dangling[0]['target']})")
-    bad = [n["label"] for n in data["nodes"] if n["kind"] == "P" and n.get("date") and not re.match(r"(19|20)\d\d\.\d\d\.\d\d$", n["date"])]
+    precs = [n for n in data["nodes"] if n["kind"] == "P"]
+    bad = [f"{n['label'] or n['id']} {n['date']}" for n in precs if n.get("date") and not re.match(r"(19|20)\d\d\.\d\d\.\d\d$", n["date"])]
     if bad:
         problems.append(f"{page}: 형식이 이상한 판례 선고일 {len(bad)}건 (예: {bad[0]})")
+    nolabel = [n["id"] for n in precs if not n.get("label")]
+    if nolabel:
+        problems.append(f"{page}: 사건번호가 빈 판례 {len(nolabel)}건 (예: {nolabel[0]}) → build_graph.py로 다시 빌드")
     meta = data["meta"]
     need = ["laws", "precedentsChecked"] if "laws" in meta else ["main", "tiers", "precedentsListed", "precedentsTotal", "precedentsUnavailable", "precedentBasis"]
     miss = [k for k in need if k not in meta]
