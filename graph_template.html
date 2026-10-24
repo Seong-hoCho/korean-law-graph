@@ -1,0 +1,480 @@
+<title>__MAIN__ 참조 지도</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Myeongjo:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 법 조문을 장(章) 순서대로 둥글게 놓은 '조문 바퀴' — 안쪽 원이 법, 그 바깥이 시행령, 가장 바깥이 판례·다른 법령. 오른쪽 패널에 선택한 조문의 연결 관계를 보여 준다. */
+:root {
+  --bg: #f4f5f2;
+  --surface: #ffffff;
+  --fg: #1c2229;
+  --muted: #5f6a72;
+  --line: #d9ddd6;
+  --law: #1f5a8a;
+  --decree: #b26b12;
+  --prec: #8a3a6c;
+  --rule: #2c8577;
+  --ext: #7d7264;
+  --cite: #3d7cb5;
+  --sel: #d43c2c;
+  --font-display: "Nanum Myeongjo", "Noto Serif KR", "Batang", serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161a; --surface: #1a2026; --fg: #e6e9e4; --muted: #96a0a6; --line: #2c343b;
+    --law: #6aa6da; --decree: #e3a14a; --prec: #d27fb2; --rule: #5cc2b1; --ext: #b3a898; --cite: #7fb2e3; --sel: #ff7a63;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161a; --surface: #1a2026; --fg: #e6e9e4; --muted: #96a0a6; --line: #2c343b;
+  --law: #6aa6da; --decree: #e3a14a; --prec: #d27fb2; --rule: #5cc2b1; --ext: #b3a898; --cite: #7fb2e3; --sel: #ff7a63;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 16px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.2; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.stats b { color: var(--fg); font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
+@media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.search { position: relative; flex: 1 1 220px; min-width: 0; }
+.search input { width: 100%; font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+.search input:focus-visible, button:focus-visible, label.tog:focus-within { outline: 2px solid var(--sel); outline-offset: 1px; }
+.results { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; max-height: 300px; overflow-y: auto; box-shadow: 0 8px 24px rgb(0 0 0 / .12); }
+.toggles { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; }
+label.tog { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; border-radius: 4px; }
+label.tog input { accent-color: var(--fg); margin: 0; }
+.swatch { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+.btn { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 6px; cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+#cy { width: 100%; height: min(78vh, 820px); min-height: 440px; }
+
+aside.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; max-height: calc(min(78vh, 820px) + 52px); overflow-y: auto; }
+@media (max-width: 960px) { aside.panel { max-height: none; } }
+.panel h2 { font-family: var(--font-display); font-size: 22px; margin: 0; line-height: 1.25; text-wrap: balance; }
+.panel h3 { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin: 0 0 6px; }
+.kindtag { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; }
+.lawtext { white-space: pre-wrap; font-size: 13px; line-height: 1.65; background: var(--bg); border-radius: 6px; padding: 10px 12px; max-height: 260px; overflow-y: auto; }
+.list { display: grid; gap: 2px; }
+.item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; text-align: left; font: inherit; font-size: 13px; padding: 5px 6px; border: 0; background: none; color: var(--fg); border-radius: 5px; cursor: pointer; width: 100%; }
+.item:hover { background: var(--bg); }
+.item .no { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.item .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.item .n { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar { height: 4px; border-radius: 2px; margin-top: 3px; grid-column: 2 / 4; }
+.more { font-size: 12px; color: var(--muted); padding: 2px 6px; }
+.note { font-size: 12.5px; color: var(--muted); }
+a { color: var(--law); }
+footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 90ch; }
+footer p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1>__MAIN__ 참조 지도</h1>
+    <p class="lede">__MAIN__ 조문을 장 순서대로 둥글게 놓고, 하위 법령 위임·조문 사이 인용·다른 법령 인용·판례 연결을 한 그림에 모았습니다. 조문이나 판례를 누르면 연결된 것만 남고, 오른쪽에 원문과 연결 목록이 나옵니다.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="main">
+    <section class="stage" aria-label="참조 그래프">
+      <div class="toolbar">
+        <div class="search">
+          <input id="q" type="search" placeholder="조문 번호·제목·사건번호 검색 (예: 17, 영 3, 국외 이전, 2023도)" autocomplete="off" aria-label="검색">
+          <div class="results" id="results" hidden></div>
+        </div>
+        <div class="toggles" role="group" aria-label="연결 종류">
+          <label class="tog"><input type="checkbox" id="t-delegates" checked><span class="swatch" style="background:var(--decree)"></span>위임</label>
+          <label class="tog"><input type="checkbox" id="t-cites" checked><span class="swatch" style="background:var(--cite)"></span>조문 인용</label>
+          <label class="tog"><input type="checkbox" id="t-precedent" checked><span class="swatch" style="background:var(--prec)"></span>판례</label>
+          <label class="tog"><input type="checkbox" id="t-external"><span class="swatch" style="background:var(--ext)"></span>다른 법령</label>
+        </div>
+        <button class="btn" id="reset" type="button">전체 보기</button>
+      </div>
+      <div id="cy"></div>
+    </section>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
+<script>
+const G = /*__DATA__*/null;
+
+const MAIN = G.meta.main;
+const hasRule = G.nodes.some(n => n.kind === "R");
+const KIND = {
+  L: { name: "법", long: MAIN + " 조문" },
+  D: { name: "영", long: "시행령 조문" },
+  R: { name: "규칙", long: "시행규칙 조문" },
+  P: { name: "판례", long: "판례" },
+  X: { name: "타법", long: "다른 법령" },
+};
+const EDGE_NAME = { delegates: "위임", cites: "조문 인용", precedent: "판례", external: "다른 법령" };
+
+const byId = new Map(G.nodes.map(n => [n.id, n]));
+const outE = new Map(), inE = new Map();
+for (const e of G.edges) {
+  (outE.get(e.source) || outE.set(e.source, []).get(e.source)).push(e);
+  (inE.get(e.target) || inE.set(e.target, []).get(e.target)).push(e);
+}
+const artKey = id => { const [, r] = id.split(":"); const [a, b] = r.split("-"); return +a * 1000 + (+b || 0); };
+const fmtDate = d => (d || "").replace(/\./g, ".");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const isArt = k => k === "L" || k === "D" || k === "R";
+for (const n of G.nodes) {
+  if (isArt(n.kind) && n.deleted && !n.ghost && !n.title) {
+    const d = (n.text.match(/삭제\s*<([\d.\s]+)>/) || [])[1];
+    n.title = "삭제" + (d ? " " + d.trim() : "");
+  }
+}
+const shortNo = n => n.label.replace(/^(법|영|규칙) 제/, "").replace("조의", "의").replace(/조$/, "");
+
+/* ---------- 조문 바퀴 배치 ---------- */
+const pos = {};
+const ang = {};
+const TAU = Math.PI * 2;
+
+const law = G.nodes.filter(n => n.kind === "L").sort((a, b) => artKey(a.id) - artKey(b.id));
+{
+  let ch = "", idx = -1, prevCh = null;
+  law.forEach(n => { if (!n.chapter) n.chapter = prevCh || ""; prevCh = n.chapter; });
+  const chapters = [...new Set(law.map(n => n.chapter))];
+  const GAP = 2.2;
+  const units = law.length + GAP * chapters.length;
+  let u = 0;
+  law.forEach(n => {
+    if (n.chapter !== ch) { ch = n.chapter; idx++; u += GAP; }
+    ang[n.id] = -Math.PI / 2 + TAU * (u - GAP / 2) / units;
+    u++;
+  });
+  G.chapters = chapters.map(c => {
+    const ns = law.filter(n => n.chapter === c);
+    return { name: c, a: circMean(ns.map(n => ang[n.id])), count: ns.length };
+  });
+}
+function circMean(list) {
+  let x = 0, y = 0;
+  for (const a of list) { x += Math.cos(a); y += Math.sin(a); }
+  return Math.atan2(y, x);
+}
+function anchorAngle(id, kinds) {
+  const ref = [];
+  for (const e of [...(outE.get(id) || []), ...(inE.get(id) || [])]) {
+    const other = e.source === id ? e.target : e.source;
+    if (kinds.includes(other[0]) && ang[other] !== undefined) ref.push(ang[other]);
+  }
+  return ref.length ? circMean(ref) : null;
+}
+function placeRing(items, base, step, minArc) {
+  const norm = a => ((a + Math.PI / 2) % TAU + TAU) % TAU;
+  items.sort((a, b) => norm(a.a) - norm(b.a));
+  const rows = [];
+  let outer = base;
+  for (const it of items) {
+    let r = 0;
+    for (;; r++) {
+      const rad = base + r * step, need = minArc / rad;
+      const row = rows[r] || (rows[r] = []);
+      const clash = row.some(b => { const d = Math.abs(norm(it.a) - norm(b)); return Math.min(d, TAU - d) < need; });
+      if (!clash) { row.push(it.a); break; }
+    }
+    const rad = base + r * step;
+    outer = Math.max(outer, rad);
+    pos[it.id] = { x: rad * Math.cos(it.a), y: rad * Math.sin(it.a) };
+    ang[it.id] = it.a;
+  }
+  return outer;
+}
+// 법 조문 수에 맞춰 안쪽 원 크기를 정하고, 바깥 고리는 앞 고리가 실제로 차지한 반지름 다음에 놓는다
+const R_LAW = Math.max(300, law.length * 14 / TAU);
+law.forEach(n => pos[n.id] = { x: R_LAW * Math.cos(ang[n.id]), y: R_LAW * Math.sin(ang[n.id]) });
+
+function placeSub(kind, base, anchors) { // 하위 법령: 위임 근거(없으면 인용하는 조문) 각도 쪽으로
+  const list = G.nodes.filter(n => n.kind === kind).sort((a, b) => artKey(a.id) - artKey(b.id));
+  if (!list.length) return base - 60;
+  let prev = -Math.PI / 2;
+  const items = list.map(n => {
+    const del = (inE.get(n.id) || []).filter(e => e.kind === "delegates").map(e => ang[e.source]);
+    let a = del.length ? circMean(del) : anchorAngle(n.id, anchors);
+    if (a === null) a = prev + 0.004;
+    prev = a;
+    return { id: n.id, a };
+  });
+  return placeRing(items, base, 15, 10);
+}
+let ring = placeSub("D", R_LAW + 80, ["L"]);
+ring = placeSub("R", ring + 50, ["L", "D"]);
+ring = placeRing(G.nodes.filter(n => n.kind === "P").map(n => ({ id: n.id, a: anchorAngle(n.id, ["L", "D", "R"]) ?? 0 })), ring + 60, 13, 9);
+placeRing(G.nodes.filter(n => n.kind === "X").map(n => ({ id: n.id, a: anchorAngle(n.id, ["L", "D", "R"]) ?? 0 })), ring + 70, 22, 46);
+
+/* ---------- 그래프 ---------- */
+const deg = id => (outE.get(id) || []).length + (inE.get(id) || []).length;
+const precCount = id => (inE.get(id) || []).filter(e => e.kind === "precedent").length;
+const elements = [];
+for (const n of G.nodes) {
+  let size = 6;
+  if (n.kind === "L") size = 9 + Math.min(5, Math.sqrt(deg(n.id)));
+  if (n.kind === "D" || n.kind === "R") size = 5 + Math.min(4, Math.sqrt(deg(n.id)) * 0.8);
+  if (n.kind === "P") size = n.court === "대법원" ? 7 : 5;
+  if (n.kind === "X") size = 6 + Math.min(5, deg(n.id));
+  elements.push({
+    group: "nodes",
+    data: { id: n.id, kind: n.kind, size, short: isArt(n.kind) ? shortNo(n) : n.label, ghost: n.ghost ? 1 : 0 },
+    position: pos[n.id], classes: n.kind + (n.ghost || n.deleted ? " gone" : ""),
+  });
+}
+G.chapters.forEach((c, i) => {
+  const r = R_LAW - 48;
+  elements.push({ group: "nodes", data: { id: "CH" + i, ch: c.name.replace(/^제/, "") }, position: { x: r * Math.cos(c.a), y: r * Math.sin(c.a) }, classes: "chapter", selectable: false, grabbable: false });
+});
+G.edges.forEach((e, i) => elements.push({ group: "edges", data: { id: "e" + i, source: e.source, target: e.target, kind: e.kind, w: e.weight }, classes: e.kind }));
+
+function tokens() {
+  const s = getComputedStyle(document.documentElement);
+  const v = k => s.getPropertyValue(k).trim();
+  return { fg: v("--fg"), muted: v("--muted"), bg: v("--surface"), line: v("--line"), law: v("--law"), decree: v("--decree"), rule: v("--rule"), prec: v("--prec"), ext: v("--ext"), cite: v("--cite"), sel: v("--sel"), mono: v("--font-mono") };
+}
+function style(t) {
+  return [
+    { selector: "node", style: { width: "data(size)", height: "data(size)", "border-width": 0, label: "", "font-family": t.mono, "font-size": 5, color: t.fg, "min-zoomed-font-size": 7, "text-valign": "center", "text-halign": "center" } },
+    { selector: "node.L", style: { "background-color": t.law, label: "data(short)", color: "#fff", "font-size": 4, "text-outline-width": 0 } },
+    { selector: "node.D", style: { "background-color": t.decree, shape: "round-rectangle" } },
+    { selector: "node.R", style: { "background-color": t.rule, shape: "round-triangle" } },
+    { selector: "node.P", style: { "background-color": t.prec, shape: "diamond" } },
+    { selector: "node.X", style: { "background-color": t.ext, shape: "hexagon", label: "data(short)", "font-family": "IBM Plex Sans KR, sans-serif", "font-size": 6, color: t.muted, "text-valign": "bottom", "text-margin-y": 2 } },
+    { selector: "node.gone", style: { "background-opacity": 0.25, "border-width": 0.6, "border-color": t.muted, "border-style": "dashed", color: t.fg } },
+    { selector: "node.chapter", style: { label: "data(ch)", width: 1, height: 1, "background-opacity": 0, "font-family": "Nanum Myeongjo, serif", "font-weight": 700, "font-size": 9, color: t.muted, "text-wrap": "wrap", "text-max-width": 70, "text-background-color": t.bg, "text-background-opacity": 0.8, "text-background-padding": 2, events: "no", "min-zoomed-font-size": 4 } },
+    { selector: "edge", style: { "curve-style": "haystack", "haystack-radius": 0, width: 0.5, opacity: 0.22 } },
+    { selector: "edge.delegates", style: { "line-color": t.decree, width: 0.8, opacity: 0.45 } },
+    { selector: "edge.cites", style: { "line-color": t.cite } },
+    { selector: "edge.precedent", style: { "line-color": t.prec, opacity: 0.18 } },
+    { selector: "edge.external", style: { "line-color": t.ext, opacity: 0.35 } },
+    { selector: ".faded", style: { opacity: 0.07 } },
+    { selector: "edge.faded", style: { opacity: 0.02 } },
+    { selector: "node.chapter.faded", style: { opacity: 0.25 } },
+    { selector: "node.hl", style: { label: "data(short)", "font-size": 5, "text-valign": "bottom", "text-margin-y": 2, color: t.fg, "text-background-color": t.bg, "text-background-opacity": 0.85, "text-background-padding": 1 } },
+    { selector: "node.L.hl", style: { "text-valign": "center", "text-margin-y": 0, color: "#fff", "text-background-opacity": 0 } },
+    { selector: "edge.hl", style: { "curve-style": "straight", opacity: 0.9, width: 0.9, "target-arrow-shape": "triangle", "arrow-scale": 0.45 } },
+    { selector: "edge.hl.delegates", style: { "target-arrow-color": t.decree } },
+    { selector: "edge.hl.cites", style: { "target-arrow-color": t.cite } },
+    { selector: "edge.hl.precedent", style: { "target-arrow-color": t.prec } },
+    { selector: "edge.hl.external", style: { "target-arrow-color": t.ext } },
+    { selector: "node.sel", style: { "border-width": 1.5, "border-color": t.sel, "border-style": "solid", "z-index": 10 } },
+  ];
+}
+
+const cy = cytoscape({
+  container: document.getElementById("cy"),
+  elements, layout: { name: "preset" }, style: style(tokens()),
+  minZoom: 0.05, maxZoom: 8, wheelSensitivity: 0.25, boxSelectionEnabled: false, autoungrabify: true,
+});
+const fitAll = (animate = false) => animate
+  ? cy.animate({ fit: { eles: cy.elements(":visible"), padding: 16 }, duration: 300 })
+  : cy.fit(cy.elements(":visible"), 16);
+const restyle = () => cy.style(style(tokens()));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);
+new MutationObserver(restyle).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+/* ---------- 필터 ---------- */
+const kinds = ["delegates", "cites", "precedent", "external"];
+function applyFilters() {
+  cy.batch(() => {
+    for (const k of kinds) {
+      const on = document.getElementById("t-" + k).checked;
+      cy.edges("." + k).style("display", on ? "element" : "none");
+    }
+    const showP = document.getElementById("t-precedent").checked;
+    const showX = document.getElementById("t-external").checked;
+    cy.nodes(".P").style("display", showP ? "element" : "none");
+    cy.nodes(".X").style("display", showX ? "element" : "none");
+  });
+  if (current) select(current, false);
+}
+kinds.forEach(k => document.getElementById("t-" + k).addEventListener("change", applyFilters));
+
+/* ---------- 선택과 패널 ---------- */
+let current = null;
+const panel = document.getElementById("panel");
+
+function select(id, move = true) {
+  current = id;
+  const n = cy.$id(id);
+  cy.batch(() => {
+    cy.elements().removeClass("hl sel").addClass("faded");
+    const hood = n.closedNeighborhood().filter(el => el.style("display") !== "none");
+    hood.removeClass("faded").addClass("hl");
+    n.addClass("sel");
+  });
+  if (move) cy.animate({ fit: { eles: n.closedNeighborhood(":visible"), padding: 60 }, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 350 });
+  renderNode(byId.get(id));
+}
+function clearSel() {
+  current = null;
+  cy.elements().removeClass("faded hl sel");
+  renderHome();
+}
+cy.on("tap", "node", e => { if (!e.target.hasClass("chapter")) select(e.target.id()); });
+cy.on("tap", e => { if (e.target === cy) clearSel(); });
+document.getElementById("reset").addEventListener("click", () => { clearSel(); fitAll(true); });
+
+const lawUrl = n => {
+  const name = MAIN.replace(/\s/g, "") + ({ L: "", D: "시행령", R: "시행규칙" }[n.kind]);
+  return "https://www.law.go.kr/법령/" + name + "/" + n.label.replace(/^(법|영|규칙) /, "");
+};
+const color = k => ({ L: "var(--law)", D: "var(--decree)", R: "var(--rule)", P: "var(--prec)", X: "var(--ext)" }[k]);
+
+function itemBtn(n, extra = "") {
+  const title = n.kind === "P" ? `${n.court || ""} ${fmtDate(n.date)} ${n.title || ""}` : (n.title || "");
+  return `<button class="item" type="button" data-id="${esc(n.id)}"><span class="no"><span class="dot" style="background:${color(n.kind)}"></span>${esc(n.label)}</span><span class="t">${esc(title)}</span><span class="n">${extra}</span></button>`;
+}
+function group(title, list, limit = 12) {
+  if (!list.length) return "";
+  const shown = list.slice(0, limit).map(([n, extra]) => itemBtn(n, extra)).join("");
+  const rest = list.length > limit ? `<button class="item more" type="button" data-more>외 ${list.length - limit}건 더 보기</button><div class="list" hidden>${list.slice(limit).map(([n, extra]) => itemBtn(n, extra)).join("")}</div>` : "";
+  return `<section><h3>${esc(title)} · ${list.length}</h3><div class="list">${shown}${rest}</div></section>`;
+}
+const neigh = (id, dir, kind) => ((dir === "out" ? outE : inE).get(id) || []).filter(e => e.kind === kind)
+  .map(e => [byId.get(dir === "out" ? e.target : e.source), e.weight > 1 ? "×" + e.weight : ""]);
+const sortArt = l => l.sort((a, b) => (a[0].kind === b[0].kind ? artKey(a[0].id) - artKey(b[0].id) : a[0].kind.localeCompare(b[0].kind)));
+const sortPrec = l => l.sort((a, b) => (b[0].date || "").localeCompare(a[0].date || ""));
+
+function renderNode(n) {
+  let html = "";
+  if (isArt(n.kind)) {
+    html += `<div><div class="kindtag"><span class="chip" style="color:${color(n.kind)}">${KIND[n.kind].long}</span>${esc(n.chapter || "")}</div>
+      <h2>${esc(n.label)}${n.title ? " (" + esc(n.title) + ")" : ""}</h2></div>`;
+    if (n.ghost) html += `<p class="note">현행 법에는 이 번호의 조문이 없습니다. 판례가 개정 전 조문 번호로 인용한 것입니다.</p>`;
+    else if (n.deleted) html += `<p class="note">현행 법에서 삭제된 조문입니다. 이 조문을 다룬 판례는 삭제 전 조문을 인용한 것입니다.</p>`;
+    else html += `<div class="lawtext">${esc(n.text.replace(/^제\d+조(의\d+)?\([^)]*\)\s*/, ""))}</div>
+      <a class="note" href="${lawUrl(n)}" target="_blank" rel="noopener">국가법령정보센터에서 보기 ↗</a>`;
+    html += group(n.kind === "L" ? "하위 법령에 위임" : "위임 근거 (법)", sortArt(neigh(n.id, n.kind === "L" ? "out" : "in", "delegates")));
+    html += group("이 조문이 인용하는 조문", sortArt(neigh(n.id, "out", "cites")));
+    html += group("이 조문을 인용하는 조문", sortArt(neigh(n.id, "in", "cites")));
+    html += group("인용하는 다른 법령", neigh(n.id, "out", "external"));
+    html += group("이 조문을 다룬 판례", sortPrec(neigh(n.id, "in", "precedent").map(([p]) => [p, p.court === "대법원" ? "대법원" : ""])), 15);
+  } else if (n.kind === "P") {
+    html += `<div><div class="kindtag"><span class="chip" style="color:var(--prec)">${esc(n.court || "법원")}</span>${esc(fmtDate(n.date))} 선고 · ${esc(n.caseType || "")}</div>
+      <h2>${esc(n.label)}</h2><div class="note">${esc(n.title)}</div></div>`;
+    if (n.text) html += `<section><h3>판시사항</h3><div class="lawtext">${esc(n.text)}</div></section>`;
+    html += `<p class="note">조문 연결 근거: ${esc(n.basis)}${n.basis === "판례내용" ? " (판결문 본문에서 자동 추출)" : ""}. <a href="${esc(n.url)}" target="_blank" rel="noopener">판결문 보기 ↗</a></p>`;
+    html += group("인용한 조문", sortArt(neigh(n.id, "out", "precedent")), 30);
+  } else {
+    html += `<div><div class="kindtag"><span class="chip" style="color:var(--ext)">다른 법령</span></div><h2>${esc(n.label)}</h2></div>`;
+    html += group("이 법령을 인용하는 조문", sortArt(neigh(n.id, "in", "external")));
+  }
+  html += `<button class="btn" type="button" id="back">← 전체 요약으로</button>`;
+  panel.innerHTML = html;
+  panel.scrollTop = 0;
+}
+
+function rank(title, note, rows, colorVar) {
+  const max = Math.max(...rows.map(r => r[1]));
+  return `<section><h3>${esc(title)}</h3>${note ? `<p class="note" style="margin:0 0 6px">${note}</p>` : ""}<div class="list">${rows.map(([n, v]) =>
+    `<button class="item" type="button" data-id="${esc(n.id)}"><span class="no">${esc(n.label)}</span><span class="t">${esc(n.title)}</span><span class="n">${v}</span><span class="bar" style="background:${colorVar};width:${(v / max * 100).toFixed(1)}%"></span></button>`).join("")}</div></section>`;
+}
+function renderHome() {
+  const lawN = G.nodes.filter(n => n.kind === "L" && !n.ghost);
+  const top = (fn, k = 8) => lawN.map(n => [n, fn(n.id)]).filter(r => r[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, k);
+  const inCites = id => (inE.get(id) || []).filter(e => e.kind === "cites").reduce((s, e) => s + e.weight, 0);
+  const dels = id => (outE.get(id) || []).filter(e => e.kind === "delegates").length;
+  panel.innerHTML = `
+    <div><div class="kindtag">읽는 법</div>
+    <p class="note" style="margin:4px 0 0">파란 원이 법 조문(숫자는 조 번호), 주황 네모가 시행령 조문${hasRule ? ", 청록 세모가 시행규칙 조문" : ""}, 보라 마름모가 판례입니다. 하위 법령과 판례는 자신이 연결된 법 조문 쪽에 놓여 있어, 판례가 몰린 방향이 곧 분쟁이 많은 조문입니다. 큰 마름모는 대법원 판결입니다.</p></div>
+    ${rank("판례가 가장 많이 다룬 조문", "", top(precCount), "var(--prec)")}
+    ${rank("법 안에서 가장 많이 인용되는 조문", "", top(inCites), "var(--cite)")}
+    ${rank(hasRule ? "시행령·시행규칙 위임이 가장 많은 조문" : "시행령 위임이 가장 많은 조문", "", top(dels, 6), "var(--decree)")}`;
+}
+panel.addEventListener("click", e => {
+  const more = e.target.closest("[data-more]");
+  if (more) { more.nextElementSibling.hidden = false; more.remove(); return; }
+  if (e.target.closest("#back")) { clearSel(); fitAll(true); return; }
+  const b = e.target.closest("[data-id]");
+  if (b) select(b.dataset.id);
+});
+
+/* ---------- 검색 ---------- */
+const q = document.getElementById("q"), results = document.getElementById("results");
+function search(s) {
+  s = s.trim();
+  if (!s) return [];
+  let kind = null, m;
+  if ((m = s.match(/^(법|영|시행령|규칙|시행규칙)\s*(.*)$/))) { kind = m[1] === "법" ? "L" : /규칙/.test(m[1]) ? "R" : "D"; s = m[2]; }
+  const num = s.match(/^제?\s*(\d+)\s*(?:조)?\s*(?:의\s*(\d+))?$/);
+  const out = [];
+  for (const n of G.nodes) {
+    if (kind && n.kind !== kind) continue;
+    let score = 0;
+    if (num && isArt(n.kind)) {
+      const id = n.kind + ":" + (+num[1]) + (num[2] ? "-" + (+num[2]) : "");
+      if (n.id === id) score = { L: 100, D: 90, R: 85 }[n.kind];
+      else if (n.id.startsWith(n.kind + ":" + (+num[1]) + "-") && !num[2]) score = 40;
+    }
+    if (!score && s.length >= 2) {
+      if (n.label.includes(s)) score = 60;
+      else if ((n.title || "").includes(s)) score = 50;
+      else if (n.kind === "L" && n.text.includes(s)) score = 10;
+    }
+    if (score) out.push([score, n]);
+  }
+  return out.sort((a, b) => b[0] - a[0] || artKey(a[1].id.replace(/^P:.*/, "Z:0")) - artKey(b[1].id.replace(/^P:.*/, "Z:0"))).slice(0, 12).map(r => r[1]);
+}
+q.addEventListener("input", () => {
+  const list = search(q.value);
+  results.hidden = !list.length;
+  results.innerHTML = list.map(n => itemBtn(n)).join("");
+});
+q.addEventListener("keydown", e => {
+  if (e.key === "Enter") { const first = results.querySelector("[data-id]"); if (first) first.click(); }
+  if (e.key === "Escape") { results.hidden = true; }
+});
+results.addEventListener("click", e => {
+  const b = e.target.closest("[data-id]");
+  if (!b) return;
+  const n = byId.get(b.dataset.id);
+  if (n.kind === "P" && !document.getElementById("t-precedent").checked) { document.getElementById("t-precedent").checked = true; applyFilters(); }
+  if (n.kind === "X" && !document.getElementById("t-external").checked) { document.getElementById("t-external").checked = true; applyFilters(); }
+  results.hidden = true;
+  select(b.dataset.id);
+});
+document.addEventListener("click", e => { if (!e.target.closest(".search")) results.hidden = true; });
+
+/* ---------- 머리말·각주 ---------- */
+const M = G.meta, cnt = k => G.nodes.filter(n => n.kind === k && !n.ghost).length, ecnt = k => G.edges.filter(e => e.kind === k).length;
+const d8 = s => `${s.slice(0, 4)}. ${+s.slice(4, 6)}. ${+s.slice(6)}.`;
+const T = M.tiers, tierList = ["L", "D", "R"].filter(k => T[k]);
+document.getElementById("eyebrow").textContent = tierList.map(k => `${{ L: "법률", D: "시행령", R: "시행규칙" }[k]} ${d8(T[k].efYd)}`).join(" · ") + " 시행본 기준";
+document.getElementById("stats").innerHTML = [
+  ["var(--law)", "법 조문", cnt("L")], ["var(--decree)", "시행령 조문", cnt("D")], ...(hasRule ? [["var(--rule)", "시행규칙 조문", cnt("R")]] : []), ["var(--prec)", "판례", cnt("P")], ["var(--ext)", "다른 법령", cnt("X")],
+].map(([c, l, v]) => `<span><span class="dot" style="background:${c}"></span>${l} <b>${v}</b></span>`).join("") +
+  `<span>위임 <b>${ecnt("delegates")}</b> · 조문 인용 <b>${ecnt("cites")}</b> · 판례 연결 <b>${ecnt("precedent")}</b></span>`;
+document.getElementById("foot").innerHTML = `
+  <p><b>자료.</b> ${esc(M.source)}에서 ${tierList.map(k => `${esc(T[k].name)}(${d8(T[k].promul)} 공포)`).join(", ")}의 조문, 위임조문 3단비교, 판례를 받아 만들었습니다.</p>
+  <p><b>연결 만드는 방법.</b> 위임은 법제처 3단비교 자료를 그대로 썼습니다. 조문 인용은 조문 본문의 「법령명」 제N조, 같은 법, 법 제N조, 영 제N조 같은 표현을 규칙으로 읽어 냈습니다. 판례는 본문에 '${esc(MAIN)}'이 나오는 ${M.precedentsListed}건을 찾은 뒤, 참조조문(${M.precedentBasis["참조조문"]}건)·판시사항과 판결요지(${M.precedentBasis["판결요지"]}건)·판결문 본문(${M.precedentBasis["판례내용"]}건) 순으로 조문을 뽑았습니다. 조문을 찾지 못한 ${M.precedentBasis["없음"]}건은 대부분 다른 법이 쟁점인 사건이라 뺐습니다.</p>
+  <p><b>주의.</b> 판례는 판결 당시 법의 조문 번호로 인용하므로, 개정으로 번호가 바뀐 조문은 현행 조문과 내용이 다를 수 있습니다. 자동 추출이라 빠지거나 잘못 잡힌 연결이 있을 수 있으니, 실무에는 원문을 확인해 주세요.</p>`;
+
+applyFilters();
+fitAll();
+renderHome();
+</script>

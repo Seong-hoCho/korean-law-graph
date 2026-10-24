@@ -1,0 +1,5 @@
+__pycache__/
+data/raw/
+.claude/
+# Claude 아티팩트용 조각 HTML (Pages용은 docs/)
+*-act-graph.html
