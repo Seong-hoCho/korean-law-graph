@@ -266,7 +266,7 @@ for (const n of G.nodes) {
 }
 G.chapters.forEach((c, i) => {
   const r = R_LAW - 48;
-  elements.push({ group: "nodes", data: { id: "CH" + i, ch: c.name.replace(/^제/, "") }, position: { x: r * Math.cos(c.a), y: r * Math.sin(c.a) }, classes: "chapter", selectable: false, grabbable: false });
+  elements.push({ group: "nodes", data: { id: "CH" + i, ch: c.name.replace(/제(\d)/g, "$1") }, position: { x: r * Math.cos(c.a), y: r * Math.sin(c.a) }, classes: "chapter", selectable: false, grabbable: false });
 });
 G.edges.forEach((e, i) => elements.push({ group: "edges", data: { id: "e" + i, source: e.source, target: e.target, kind: e.kind, w: e.weight }, classes: e.kind }));
 

@@ -63,12 +63,17 @@ def find_mst(name):
 
 def load_articles(mst, prefix):
     law = L.service("law", MST=mst)["법령"]
-    arts, chapter = [], ""
+    arts, part, chapter = [], "", ""
     for u in L.as_list(law["조문"]["조문단위"]):
         if u["조문여부"] != "조문":
-            m = re.search(r"제\d+장\s*(.+)", u.get("조문내용", ""))
+            # 편(編)이 있는 법(상법 등)은 장 이름이 편마다 겹치므로 '제3편 제4장 주식회사'처럼 편을 붙인다
+            head = u.get("조문내용", "")
+            m = re.search(r"제\d+편\s*(.+)", head)
             if m:
-                chapter = re.sub(r"\s*<.*", "", m.group(0)).strip()
+                part = chapter = re.sub(r"\s*<.*", "", m.group(0)).strip()
+            m = re.search(r"제\d+장\s*(.+)", head)
+            if m:
+                chapter = ((part + " ") if part else "") + re.sub(r"\s*<.*", "", m.group(0)).strip()
             continue
         no, sub = u["조문번호"], u.get("조문가지번호") or "0"
         parts = flatten(u)
