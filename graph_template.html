@@ -1,9 +1,9 @@
 <title>__MAIN__ 참조 지도</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Myeongjo:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Myeongjo:wght@700;800&display=swap">
 <style>
-/* Layout: 법 조문을 장(章) 순서대로 둥글게 놓은 '조문 바퀴' — 안쪽 원이 법, 그 바깥이 시행령, 가장 바깥이 판례·다른 법령. 오른쪽 패널에 선택한 조문의 연결 관계를 보여 준다. */
+/* Layout: 법 조문을 장(章) 순서대로 둥글게 놓은 '조문 바퀴' — 안쪽 원이 법, 그 바깥이 시행령, 가장 바깥이 판례·다른 법령. 넓은 화면은 오른쪽 패널, 좁은 화면은 아래 패널(선택 중에는 바닥 시트)에 선택한 조문의 연결 관계를 보여 준다. */
 :root {
   --bg: #f4f5f2;
   --surface: #ffffff;
@@ -19,7 +19,6 @@
   --sel: #d43c2c;
   --font-display: "Nanum Myeongjo", "Noto Serif KR", "Batang", serif;
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -36,16 +35,17 @@
 * { box-sizing: border-box; }
 body {
   background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.55;
+  word-break: keep-all; overflow-wrap: break-word;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 20px 32px;
 }
 .wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 16px; }
 header { display: grid; gap: 6px; }
-.eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.eyebrow { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.2; margin: 0; text-wrap: balance; }
 .lede { margin: 0; color: var(--muted); max-width: 70ch; }
 .stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
-.stats b { color: var(--fg); font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.stats b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
 
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
@@ -63,21 +63,38 @@ label.tog input { accent-color: var(--fg); margin: 0; }
 .swatch { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
 .btn { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 6px; cursor: pointer; }
 .btn:hover { border-color: var(--muted); }
+.canvas { position: relative; }
+.canvas .btn { position: absolute; top: 10px; right: 10px; z-index: 2; background: var(--surface); }
 #cy { width: 100%; height: min(78vh, 820px); min-height: 440px; }
+@media (max-width: 600px) {
+  header { gap: 4px; }
+  .lede { font-size: 13px; }
+  .stats { font-size: 12.5px; gap: 2px 12px; }
+  .toolbar { padding: 8px 10px; gap: 8px; }
+  .toggles { gap: 4px 10px; }
+  .swatch { width: 10px; }
+  #cy { height: 70svh; min-height: 360px; }
+}
 
 aside.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; max-height: calc(min(78vh, 820px) + 52px); overflow-y: auto; }
-@media (max-width: 960px) { aside.panel { max-height: none; } }
+@media (max-width: 960px) {
+  aside.panel { max-height: none; }
+  /* 선택 중에는 패널을 바닥 시트로 띄워, 그래프와 원문을 한 화면에서 본다 */
+  aside.panel.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 45svh; border-radius: 14px 14px 0 0; border-bottom: 0;
+    box-shadow: 0 -6px 24px rgb(0 0 0 / .16); padding: 14px max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  body.sheet-open { padding-bottom: calc(45svh + 32px); }
+}
 .panel h2 { font-family: var(--font-display); font-size: 22px; margin: 0; line-height: 1.25; text-wrap: balance; }
 .panel h3 { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin: 0 0 6px; }
-.kindtag { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.kindtag { font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .chip { display: inline-flex; align-items: center; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; }
 .lawtext { white-space: pre-wrap; font-size: 13px; line-height: 1.65; background: var(--bg); border-radius: 6px; padding: 10px 12px; max-height: 260px; overflow-y: auto; }
 .list { display: grid; gap: 2px; }
 .item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; text-align: left; font: inherit; font-size: 13px; padding: 5px 6px; border: 0; background: none; color: var(--fg); border-radius: 5px; cursor: pointer; width: 100%; }
 .item:hover { background: var(--bg); }
-.item .no { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.item .no { font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .item .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
-.item .n { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.item .n { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .bar { height: 4px; border-radius: 2px; margin-top: 3px; grid-column: 2 / 4; }
 .more { font-size: 12px; color: var(--muted); padding: 2px 6px; }
 .note { font-size: 12.5px; color: var(--muted); }
@@ -91,7 +108,7 @@ footer p { margin: 0; }
   <header>
     <div class="eyebrow" id="eyebrow"></div>
     <h1>__MAIN__ 참조 지도</h1>
-    <p class="lede">__MAIN__ 조문을 장 순서대로 둥글게 놓고, 하위 법령 위임·조문 사이 인용·다른 법령 인용·판례 연결을 한 그림에 모았습니다. 조문이나 판례를 누르면 연결된 것만 남고, 오른쪽에 원문과 연결 목록이 나옵니다.</p>
+    <p class="lede">__MAIN__ 조문을 장 순서대로 둥글게 놓고, 하위 법령 위임·조문 인용·판례 연결을 한 그림에 모았습니다. 조문이나 판례를 누르면 연결된 것만 남고 원문과 연결 목록이 나옵니다.</p>
     <div class="stats" id="stats"></div>
   </header>
 
@@ -108,9 +125,11 @@ footer p { margin: 0; }
           <label class="tog"><input type="checkbox" id="t-precedent" checked><span class="swatch" style="background:var(--prec)"></span>판례</label>
           <label class="tog"><input type="checkbox" id="t-external"><span class="swatch" style="background:var(--ext)"></span>다른 법령</label>
         </div>
+      </div>
+      <div class="canvas">
+        <div id="cy"></div>
         <button class="btn" id="reset" type="button">전체 보기</button>
       </div>
-      <div id="cy"></div>
     </section>
     <aside class="panel" id="panel" aria-live="polite"></aside>
   </div>
@@ -254,18 +273,18 @@ G.edges.forEach((e, i) => elements.push({ group: "edges", data: { id: "e" + i, s
 function tokens() {
   const s = getComputedStyle(document.documentElement);
   const v = k => s.getPropertyValue(k).trim();
-  return { fg: v("--fg"), muted: v("--muted"), bg: v("--surface"), line: v("--line"), law: v("--law"), decree: v("--decree"), rule: v("--rule"), prec: v("--prec"), ext: v("--ext"), cite: v("--cite"), sel: v("--sel"), mono: v("--font-mono") };
+  return { fg: v("--fg"), muted: v("--muted"), bg: v("--surface"), line: v("--line"), law: v("--law"), decree: v("--decree"), rule: v("--rule"), prec: v("--prec"), ext: v("--ext"), cite: v("--cite"), sel: v("--sel"), body: v("--font-body") };
 }
 function style(t) {
   return [
-    { selector: "node", style: { width: "data(size)", height: "data(size)", "border-width": 0, label: "", "font-family": t.mono, "font-size": 5, color: t.fg, "min-zoomed-font-size": 7, "text-valign": "center", "text-halign": "center" } },
+    { selector: "node", style: { width: "data(size)", height: "data(size)", "border-width": 0, label: "", "font-family": t.body, "font-size": 5, color: t.fg, "min-zoomed-font-size": 7, "text-valign": "center", "text-halign": "center" } },
     { selector: "node.L", style: { "background-color": t.law, label: "data(short)", color: "#fff", "font-size": 4, "text-outline-width": 0 } },
     { selector: "node.D", style: { "background-color": t.decree, shape: "round-rectangle" } },
     { selector: "node.R", style: { "background-color": t.rule, shape: "round-triangle" } },
     { selector: "node.P", style: { "background-color": t.prec, shape: "diamond" } },
-    { selector: "node.X", style: { "background-color": t.ext, shape: "hexagon", label: "data(short)", "font-family": "IBM Plex Sans KR, sans-serif", "font-size": 6, color: t.muted, "text-valign": "bottom", "text-margin-y": 2 } },
+    { selector: "node.X", style: { "background-color": t.ext, shape: "hexagon", label: "data(short)", "font-size": 6, color: t.muted, "text-valign": "bottom", "text-margin-y": 2 } },
     { selector: "node.gone", style: { "background-opacity": 0.25, "border-width": 0.6, "border-color": t.muted, "border-style": "dashed", color: t.fg } },
-    { selector: "node.chapter", style: { label: "data(ch)", width: 1, height: 1, "background-opacity": 0, "font-family": "Nanum Myeongjo, serif", "font-weight": 700, "font-size": 9, color: t.muted, "text-wrap": "wrap", "text-max-width": 70, "text-background-color": t.bg, "text-background-opacity": 0.8, "text-background-padding": 2, events: "no", "min-zoomed-font-size": 4 } },
+    { selector: "node.chapter", style: { label: "data(ch)", width: 1, height: 1, "background-opacity": 0, "font-family": "Nanum Myeongjo, serif", "font-weight": 700, "font-size": 9, color: t.muted, "text-wrap": "wrap", "text-max-width": 70, "line-height": 1.3, "text-background-color": t.bg, "text-background-opacity": 0.8, "text-background-padding": 2, events: "no", "min-zoomed-font-size": 4 } },
     { selector: "edge", style: { "curve-style": "haystack", "haystack-radius": 0, width: 0.5, opacity: 0.22 } },
     { selector: "edge.delegates", style: { "line-color": t.decree, width: 0.8, opacity: 0.45 } },
     { selector: "edge.cites", style: { "line-color": t.cite } },
@@ -293,7 +312,22 @@ const cy = cytoscape({
 const fitAll = (animate = false) => animate
   ? cy.animate({ fit: { eles: cy.elements(":visible"), padding: 16 }, duration: 300 })
   : cy.fit(cy.elements(":visible"), 16);
-const restyle = () => cy.style(style(tokens()));
+/* 장 이름은 확대와 상관없이 화면에서 11px로 보이게 하고, 이웃 장 이름과 겹치면 조문이 적은 장 쪽을 숨긴다 */
+function chapterLabels() {
+  const z = cy.zoom(), fs = Math.min(28, Math.max(3, 11 / z));
+  const chs = cy.nodes(".chapter");
+  chs.style({ "font-size": fs, "text-max-width": fs * 8, "text-background-padding": fs * 0.2, "text-opacity": 1, "text-background-opacity": 0.8 });
+  const kept = [], gap = fs * 0.4;
+  const hit = (a, b) => a.x1 - gap < b.x2 && b.x1 - gap < a.x2 && a.y1 - gap < b.y2 && b.y1 - gap < a.y2;
+  chs.sort((a, b) => G.chapters[+b.id().slice(2)].count - G.chapters[+a.id().slice(2)].count).forEach(n => {
+    // 한글 한 글자를 대략 글자 크기만큼 넓다고 보고, text-max-width에서 줄바꿈되는 상자를 어림한다
+    const len = [...n.data("ch")].length, w = Math.min(len, 8) * fs, h = Math.ceil(len / 8) * fs * 1.3, p = n.position();
+    const bb = { x1: p.x - w / 2, x2: p.x + w / 2, y1: p.y - h / 2, y2: p.y + h / 2 };
+    if (kept.some(k => hit(k, bb))) n.style({ "text-opacity": 0, "text-background-opacity": 0 }); else kept.push(bb);
+  });
+}
+cy.on("zoom", chapterLabels);
+const restyle = () => { cy.style(style(tokens())); chapterLabels(); };
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);
 new MutationObserver(restyle).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
@@ -318,6 +352,24 @@ kinds.forEach(k => document.getElementById("t-" + k).addEventListener("change", 
 let current = null;
 const panel = document.getElementById("panel");
 
+const narrow = matchMedia("(max-width: 960px)");
+const FOCUS_MAX = 2.5;
+// 선택한 조문과 이웃을 그래프 중 실제로 보이는 부분(화면 밖·바닥 시트 아래 제외)에 맞춘다. 연결이 적어도 FOCUS_MAX배 넘게 확대하지 않는다.
+function focusOn(eles) {
+  const box = cy.container().getBoundingClientRect();
+  const floor = panel.classList.contains("sheet") ? panel.getBoundingClientRect().top : innerHeight;
+  const top = Math.max(box.top, 0), bottom = Math.min(box.bottom, floor);
+  const vis = { y: top - box.top, w: box.width, h: Math.max(160, bottom - top) };
+  const bb = eles.boundingBox(), pad = 36;
+  const z = Math.min(FOCUS_MAX, (vis.w - 2 * pad) / Math.max(bb.w, 1), (vis.h - 2 * pad) / Math.max(bb.h, 1));
+  const pan = { x: vis.w / 2 - z * (bb.x1 + bb.w / 2), y: vis.y + vis.h / 2 - z * (bb.y1 + bb.h / 2) };
+  cy.animate({ zoom: z, pan, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 350 });
+}
+function setSheet(on) {
+  panel.classList.toggle("sheet", on);
+  document.body.classList.toggle("sheet-open", on);
+}
+
 function select(id, move = true) {
   current = id;
   const n = cy.$id(id);
@@ -327,12 +379,19 @@ function select(id, move = true) {
     hood.removeClass("faded").addClass("hl");
     n.addClass("sel");
   });
-  if (move) cy.animate({ fit: { eles: n.closedNeighborhood(":visible"), padding: 60 }, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 350 });
   renderNode(byId.get(id));
+  setSheet(narrow.matches);
+  if (!move) return;
+  if (narrow.matches) { // 그래프 윗부분을 화면 맨 위로 올려, 시트 위로 그래프가 보이게 한다
+    const t = cy.container().getBoundingClientRect().top;
+    if (Math.abs(t) > 4) window.scrollTo({ top: scrollY + t, behavior: "instant" });
+  }
+  focusOn(n.closedNeighborhood(":visible"));
 }
 function clearSel() {
   current = null;
   cy.elements().removeClass("faded hl sel");
+  setSheet(false);
   renderHome();
 }
 cy.on("tap", "node", e => { if (!e.target.hasClass("chapter")) select(e.target.id()); });
@@ -384,8 +443,7 @@ function renderNode(n) {
     html += `<div><div class="kindtag"><span class="chip" style="color:var(--ext)">다른 법령</span></div><h2>${esc(n.label)}</h2></div>`;
     html += group("이 법령을 인용하는 조문", sortArt(neigh(n.id, "in", "external")));
   }
-  html += `<button class="btn" type="button" id="back">← 전체 요약으로</button>`;
-  panel.innerHTML = html;
+  panel.innerHTML = `<div><button class="btn" type="button" id="back">← 전체 요약으로</button></div>` + html;
   panel.scrollTop = 0;
 }
 
@@ -416,6 +474,12 @@ panel.addEventListener("click", e => {
 
 /* ---------- 검색 ---------- */
 const q = document.getElementById("q"), results = document.getElementById("results");
+const smallQ = matchMedia("(max-width: 600px)");
+q.dataset.long = q.placeholder;
+const setPlaceholder = () => { q.placeholder = smallQ.matches ? "조문·제목·사건번호 (예: 17, 영 3)" : q.dataset.long; };
+setPlaceholder();
+smallQ.addEventListener("change", setPlaceholder);
+narrow.addEventListener("change", () => setSheet(narrow.matches && current !== null));
 function search(s) {
   s = s.trim();
   if (!s) return [];
@@ -476,5 +540,6 @@ document.getElementById("foot").innerHTML = `
 
 applyFilters();
 fitAll();
+chapterLabels();
 renderHome();
 </script>
