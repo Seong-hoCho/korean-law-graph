@@ -5,6 +5,7 @@
 - 지도 보기: https://seong-hocho.github.io/korean-law-graph/
   - [개인정보 보호법](https://seong-hocho.github.io/korean-law-graph/privacy.html): 법 128조 · 시행령 142조 · 판례 130건
   - [보험업법](https://seong-hocho.github.io/korean-law-graph/insurance.html): 법 253조 · 시행령 146조 · 시행규칙 61조 · 판례 145건
+  - [상법](https://seong-hocho.github.io/korean-law-graph/commercial.html): 법 1,184조 · 시행령 59조 · 판례 456건 (본문에 상법이 나오는 판례 5,219건 중 최근 1,000건에서 추출)
 
 법 조문은 장 순서대로 안쪽 원에 놓입니다. 시행령·시행규칙·판례는 연결된 법 조문 쪽 바깥 고리에 놓이므로, 판례가 몰린 방향이 곧 분쟁이 많은 조문입니다. 조문이나 판례를 누르면 연결된 것만 남고, 옆 패널에 원문과 연결 목록이 나옵니다.
 

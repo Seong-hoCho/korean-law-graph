@@ -23,7 +23,7 @@
 body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
   word-break: keep-all; overflow-wrap: break-word;
   padding: 48px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
-main { max-width: 760px; margin: 0 auto; display: grid; gap: 28px; }
+main { max-width: 960px; margin: 0 auto; display: grid; gap: 28px; }
 h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(33px, 5vw, 46px); line-height: 1.2; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
 p { margin: 0; color: var(--muted); max-width: 65ch; }
 /* 카드는 부모 격자의 행을 나눠 써서(subgrid), 옆 카드와 제목·숫자·설명 줄이 같은 높이에 맞는다 */
@@ -57,6 +57,12 @@ footer a { color: var(--law); }
       <h2>보험업법</h2>
       <div class="nums"><span><span class="dot" style="background:var(--law)"></span>법 253조</span><span><span class="dot" style="background:var(--decree)"></span>시행령 146조</span><span><span class="dot" style="background:var(--rule)"></span>시행규칙 61조</span><span><span class="dot" style="background:var(--prec)"></span>판례 145건</span></div>
       <p>판례가 가장 많이 다룬 조문은 제158조(해산 후의 보험금 지급)이고, 2020년에 삭제된 제102조가 그다음입니다.</p>
+    </a>
+    <a class="map" href="commercial.html">
+      <img src="thumbs/commercial.svg" alt="" width="600" height="600" loading="lazy">
+      <h2>상법</h2>
+      <div class="nums"><span><span class="dot" style="background:var(--law)"></span>법 1,184조</span><span><span class="dot" style="background:var(--decree)"></span>시행령 59조</span><span><span class="dot" style="background:var(--prec)"></span>판례 456건</span></div>
+      <p>최근 판례가 가장 많이 다룬 조문은 제682조(제3자에 대한 보험대위)와 제64조(상사시효)입니다.</p>
     </a>
   </section>
   <footer>
