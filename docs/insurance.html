@@ -60,16 +60,47 @@ h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(33px, 
 
 .stage { background: var(--surface); border-radius: 2px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; min-width: 0; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+/* 초점 표시: 바깥선 대신 상자 면 색 틈 + 먹색 반투명 고리 */
+:root { --ring: 0 0 0 2px var(--surface), 0 0 0 4px color-mix(in srgb, var(--sel) 55%, transparent); --ease: 160ms cubic-bezier(.2, .7, .3, 1); }
+:where(button, a, input, [tabindex]):focus-visible { outline: none; box-shadow: var(--ring); }
+
 .search { position: relative; flex: 1 1 220px; min-width: 0; }
-.search input { width: 100%; font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 1px; background: var(--bg); color: var(--fg); }
-.search input:focus-visible, button:focus-visible, label.tog:focus-within { outline: 2px solid var(--sel); outline-offset: 1px; }
+.search input { width: 100%; font: inherit; font-size: 13px; height: 36px; padding: 0 34px 0 34px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg);
+  transition: border-color var(--ease), background-color var(--ease), box-shadow var(--ease); }
+.search input::placeholder { color: var(--muted); }
+.search input:hover { border-color: color-mix(in srgb, var(--muted) 55%, var(--line)); }
+.search input:focus { background: var(--surface); border-color: var(--muted); }
+.search input::-webkit-search-cancel-button, .search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+.search-icon { position: absolute; left: 11px; top: 18px; translate: 0 -50%; width: 15px; height: 15px; color: var(--muted); pointer-events: none; }
+.search-clear { position: absolute; right: 5px; top: 18px; translate: 0 -50%; width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer;
+  transition: background-color var(--ease), color var(--ease); }
+.search-clear:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--fg); }
+.search-clear svg { width: 14px; height: 14px; }
+/* 검색어가 없으면(placeholder가 보이면) 지우기 버튼을 숨긴다 */
+.search input:placeholder-shown ~ .search-clear { display: none; }
 .results { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line); border-radius: 2px; max-height: 300px; overflow-y: auto; box-shadow: 0 8px 24px rgb(0 0 0 / .12); }
-.toggles { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; }
-label.tog { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; border-radius: 1px; }
-label.tog input { accent-color: var(--fg); margin: 0; }
-.swatch { width: 16px; height: 3px; border-radius: 1px; display: inline-block; }
-.btn { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 1px; cursor: pointer; }
-.btn:hover { border-color: var(--muted); }
+/* 연결 종류 칩: 켜지면 종류 색이 은은하게 깔리고, 꺼지면 테두리만 남는다 (--c는 HTML에서 종류마다 지정) */
+.toggles { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; }
+label.tog { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); background: transparent; cursor: pointer; user-select: none;
+  transition: background-color var(--ease), border-color var(--ease), color var(--ease), box-shadow var(--ease); }
+label.tog:hover { border-color: color-mix(in srgb, var(--c) 45%, var(--line)); color: var(--fg); }
+label.tog input { position: absolute; inset: 0; margin: 0; opacity: 0; appearance: none; -webkit-appearance: none; cursor: pointer; border-radius: inherit; }
+label.tog:has(input:checked) { color: var(--fg); background: color-mix(in srgb, var(--c) 13%, var(--surface)); border-color: color-mix(in srgb, var(--c) 50%, var(--line)); }
+label.tog:has(input:checked):hover { background: color-mix(in srgb, var(--c) 20%, var(--surface)); }
+label.tog:has(input:focus-visible) { box-shadow: var(--ring); }
+label.tog input:focus-visible { box-shadow: none; }
+.swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; background: var(--c); opacity: .35; transition: opacity var(--ease); }
+label.tog:has(input:checked) .swatch { opacity: 1; }
+/* :has를 모르는 브라우저는 체크박스를 그대로 보여 준다 */
+@supports not selector(:has(*)) {
+  label.tog input { position: static; opacity: 1; appearance: auto; -webkit-appearance: checkbox; accent-color: var(--fg); }
+  .swatch { opacity: 1; }
+}
+.btn { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 6px; cursor: pointer;
+  transition: background-color var(--ease), border-color var(--ease), color var(--ease), box-shadow var(--ease); }
+.btn:hover { border-color: var(--muted); background: color-mix(in srgb, var(--fg) 5%, var(--bg)); }
+.btn:active { background: color-mix(in srgb, var(--fg) 9%, var(--bg)); }
 .canvas { position: relative; }
 .canvas .btn { position: absolute; top: 10px; right: 10px; z-index: 2; background: var(--surface); }
 #cy { width: 100%; height: min(78vh, 820px); min-height: 440px; }
@@ -103,7 +134,13 @@ aside.panel { background: var(--surface); border-radius: 2px; padding: 22px; dis
 .lawtext { white-space: pre-wrap; font-size: 13px; line-height: 1.65; background: var(--bg); border-radius: 1px; padding: 10px 12px; max-height: 260px; overflow-y: auto; }
 .list { display: grid; gap: 2px; }
 .item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; text-align: left; font: inherit; font-size: 13px; padding: 8px 6px; border: 0; background: none; color: var(--fg); border-radius: 1px; cursor: pointer; width: 100%; }
+.item { transition: background-color var(--ease); }
 .item:hover { background: var(--bg); }
+.item:active { background: color-mix(in srgb, var(--fg) 7%, var(--bg)); }
+/* 패널 빈 상태: 아무것도 선택하지 않았을 때 맨 위 안내 */
+.empty { display: grid; justify-items: center; gap: 10px; text-align: center; padding: 18px 12px 20px; border: 1px dashed var(--line); border-radius: 2px; color: var(--muted); }
+.empty svg { width: 30px; height: 30px; color: var(--law); }
+.empty p { margin: 0; font-size: 13px; max-width: 22em; text-wrap: balance; }
 .item .no { font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .item .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 .item .n { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -113,7 +150,7 @@ aside.panel { background: var(--surface); border-radius: 2px; padding: 22px; dis
 a { color: var(--law); }
 footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; max-width: 90ch; }
 footer p { margin: 0; }
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
 </style>
 </head>
 <body>
@@ -131,14 +168,16 @@ footer p { margin: 0; }
     <section class="stage" aria-label="참조 그래프">
       <div class="toolbar">
         <div class="search">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input id="q" type="search" placeholder="조문 번호·제목·사건번호 검색 (예: 17, 영 3, 국외 이전, 2023도)" autocomplete="off" aria-label="검색">
+          <button class="search-clear" id="q-clear" type="button" aria-label="검색어 지우기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
           <div class="results" id="results" hidden></div>
         </div>
         <div class="toggles" role="group" aria-label="연결 종류">
-          <label class="tog"><input type="checkbox" id="t-delegates" checked><span class="swatch" style="background:var(--decree)"></span>위임</label>
-          <label class="tog"><input type="checkbox" id="t-cites" checked><span class="swatch" style="background:var(--cite)"></span>조문 인용</label>
-          <label class="tog"><input type="checkbox" id="t-precedent" checked><span class="swatch" style="background:var(--prec)"></span>판례</label>
-          <label class="tog"><input type="checkbox" id="t-external"><span class="swatch" style="background:var(--ext)"></span>다른 법령</label>
+          <label class="tog" style="--c:var(--decree)"><input type="checkbox" id="t-delegates" checked><span class="swatch"></span>위임</label>
+          <label class="tog" style="--c:var(--cite)"><input type="checkbox" id="t-cites" checked><span class="swatch"></span>조문 인용</label>
+          <label class="tog" style="--c:var(--prec)"><input type="checkbox" id="t-precedent" checked><span class="swatch"></span>판례</label>
+          <label class="tog" style="--c:var(--ext)"><input type="checkbox" id="t-external"><span class="swatch"></span>다른 법령</label>
         </div>
       </div>
       <div class="canvas">
@@ -494,6 +533,8 @@ function renderHome() {
   const inCites = id => (inE.get(id) || []).filter(e => e.kind === "cites").reduce((s, e) => s + e.weight, 0);
   const dels = id => (outE.get(id) || []).filter(e => e.kind === "delegates").length;
   panel.innerHTML = `
+    <div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4.5V3M4.6 6.1 3.5 5M3 10.5H4.5M14.5 5l-1 1.1"/><path d="m9 9 11 3.6-4.6 1.8L13.6 19z"/></svg>
+      <p>그래프에서 조문이나 판례를 클릭하여 상세 내용을 확인하세요.</p></div>
     <div><div class="kindtag">읽는 법</div>
     <p class="note" style="margin:4px 0 0">파란 원이 법 조문(숫자는 조 번호), 주황 네모가 시행령 조문${hasRule ? ", 청록 세모가 시행규칙 조문" : ""}, 보라 마름모가 판례입니다. 하위 법령과 판례는 자신이 연결된 법 조문 쪽에 놓여 있어, 판례가 몰린 방향이 곧 분쟁이 많은 조문입니다. 큰 마름모는 대법원 판결입니다.</p></div>
     ${rank("판례가 가장 많이 다룬 조문", "", top(precCount), "var(--prec)")}
@@ -548,6 +589,12 @@ q.addEventListener("input", () => {
 q.addEventListener("keydown", e => {
   if (e.key === "Enter") { const first = results.querySelector("[data-id]"); if (first) first.click(); }
   if (e.key === "Escape") { results.hidden = true; }
+});
+document.getElementById("q-clear").addEventListener("click", () => {
+  q.value = "";
+  results.hidden = true;
+  results.innerHTML = "";
+  q.focus();
 });
 results.addEventListener("click", e => {
   const b = e.target.closest("[data-id]");
