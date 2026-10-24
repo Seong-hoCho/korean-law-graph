@@ -8,30 +8,30 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Myeongjo:wght@700;800&display=swap">
 <style>
 :root {
-  --bg: #f4f5f2; --surface: #ffffff; --fg: #1c2229; --muted: #5f6a72; --line: #d9ddd6;
-  --law: #1f5a8a; --decree: #b26b12; --rule: #2c8577; --prec: #8a3a6c;
+  --bg: #f2eee4; --surface: #fffdf7; --fg: #231f19; --muted: #675e51; --line: #dbd2c2;
+  --law: #1f4b89; --decree: #b26b12; --rule: #2c8577; --prec: #8a3a6c;
   --font-display: "Nanum Myeongjo", "Noto Serif KR", "Batang", serif;
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --bg: #12161a; --surface: #1a2026; --fg: #e6e9e4; --muted: #96a0a6; --line: #2c343b;
-    --law: #6aa6da; --decree: #e3a14a; --rule: #5cc2b1; --prec: #d27fb2; color-scheme: dark; }
+  :root:not([data-theme="light"]) { --bg: #16140f; --surface: #1f1c16; --fg: #ece6da; --muted: #a59c8c; --line: #353026;
+    --law: #76a0db; --decree: #e3a14a; --rule: #5cc2b1; --prec: #d27fb2; color-scheme: dark; }
 }
-:root[data-theme="dark"] { --bg: #12161a; --surface: #1a2026; --fg: #e6e9e4; --muted: #96a0a6; --line: #2c343b;
-  --law: #6aa6da; --decree: #e3a14a; --rule: #5cc2b1; --prec: #d27fb2; color-scheme: dark; }
+:root[data-theme="dark"] { --bg: #16140f; --surface: #1f1c16; --fg: #ece6da; --muted: #a59c8c; --line: #353026;
+  --law: #76a0db; --decree: #e3a14a; --rule: #5cc2b1; --prec: #d27fb2; color-scheme: dark; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
   word-break: keep-all; overflow-wrap: break-word;
   padding: 48px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
 main { max-width: 760px; margin: 0 auto; display: grid; gap: 28px; }
-h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 5vw, 40px); line-height: 1.2; margin: 0; text-wrap: balance; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(33px, 5vw, 46px); line-height: 1.2; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
 p { margin: 0; color: var(--muted); max-width: 65ch; }
 /* 카드는 부모 격자의 행을 나눠 써서(subgrid), 옆 카드와 제목·숫자·설명 줄이 같은 높이에 맞는다 */
 .maps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-a.map { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 8px; align-content: start; padding: 0 18px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; color: inherit; text-decoration: none; overflow: hidden; }
-a.map:hover { border-color: var(--muted); }
-a.map:focus-visible { outline: 2px solid var(--law); outline-offset: 2px; }
-a.map img { display: block; width: calc(100% + 36px); height: auto; margin: 0 -18px 6px; aspect-ratio: 4 / 3; object-fit: contain; padding: 14px; background: var(--bg); border-bottom: 1px solid var(--line); }
+a.map { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 8px; align-content: start; padding: 0 18px 18px; background: var(--surface); border-radius: 2px; color: inherit; text-decoration: none; overflow: hidden; }
+a.map:hover { box-shadow: inset 0 0 0 1px var(--line); }
+a.map:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+a.map img { display: block; width: calc(100% + 36px); height: auto; margin: 0 -18px 6px; aspect-ratio: 4 / 3; object-fit: contain; padding: 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
 a.map h2 { font-family: var(--font-display); font-size: 22px; line-height: 1.3; margin: 0; }
 .nums { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 12px; font-variant-numeric: tabular-nums; align-content: start; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }

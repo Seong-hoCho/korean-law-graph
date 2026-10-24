@@ -7,8 +7,8 @@ const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
 const COLORS = { // graph_template.html 의 :root 토큰과 같은 값
-  light: { L: "#1f5a8a", D: "#b26b12", R: "#2c8577", P: "#8a3a6c", delegates: "#b26b12", cites: "#3d7cb5", precedent: "#8a3a6c" },
-  dark: { L: "#6aa6da", D: "#e3a14a", R: "#5cc2b1", P: "#d27fb2", delegates: "#e3a14a", cites: "#7fb2e3", precedent: "#d27fb2" },
+  light: { L: "#1f4b89", D: "#b26b12", R: "#2c8577", P: "#8a3a6c", delegates: "#b26b12", cites: "#3d7cb5", precedent: "#8a3a6c" },
+  dark: { L: "#76a0db", D: "#e3a14a", R: "#5cc2b1", P: "#d27fb2", delegates: "#e3a14a", cites: "#7fb2e3", precedent: "#d27fb2" },
 };
 const SIZE = 600;
 
