@@ -10,6 +10,8 @@ const COLORS = { // graph_template.html 의 :root 토큰과 같은 값
   light: { L: "#1f4b89", D: "#b26b12", R: "#2c8577", P: "#8a3a6c", delegates: "#b26b12", cites: "#3d7cb5", precedent: "#8a3a6c" },
   dark: { L: "#76a0db", D: "#e3a14a", R: "#5cc2b1", P: "#d27fb2", delegates: "#e3a14a", cites: "#7fb2e3", precedent: "#d27fb2" },
 };
+// 여러 법령 지도(build_multi.py)는 법마다 색을 하나씩: 가운데 법 L(파랑), 다음 R(청록), D(주황). 법 사이 인용 선(xL…)도 인용하는 법의 색
+for (const c of Object.values(COLORS)) Object.assign(c, { xL: c.L, xR: c.R, xD: c.D });
 const SIZE = 600;
 
 (async () => {
@@ -22,16 +24,22 @@ const SIZE = 600;
   for (const name of process.argv.slice(2)) {
     await page.goto("file://" + path.join(ROOT, "docs", name + ".html"));
     await page.waitForFunction(() => typeof cy !== "undefined");
-    const g = await page.evaluate(() => ({
-      nodes: cy.nodes(":visible").filter(n => !n.hasClass("chapter")).map(n => ({ k: n.data("kind"), s: n.data("size"), gone: n.hasClass("gone"), ...n.position() })),
-      edges: cy.edges(":visible").map(e => ({ k: e.data("kind"), a: e.source().position(), b: e.target().position() })),
-    }));
+    const g = await page.evaluate(() => {
+      const multi = typeof LAWS !== "undefined";
+      const lawK = key => ["L", "R", "D"][LAWS.findIndex(l => l.key === key)] || "L";
+      return {
+        nodes: cy.nodes(":visible").filter(n => !n.hasClass("chapter") && !n.hasClass("lawname")).map(n => ({
+          k: multi ? (n.hasClass("P") ? "P" : lawK(n.data("law"))) : n.data("kind"), s: n.data("size"), gone: n.hasClass("gone"), ...n.position() })),
+        edges: cy.edges(":visible").map(e => ({
+          k: multi ? (e.hasClass("precedent") ? "precedent" : "x" + lawK(e.data("law"))) : e.data("kind"), a: e.source().position(), b: e.target().position() })),
+      };
+    });
     const xs = g.nodes.map(n => n.x), ys = g.nodes.map(n => n.y);
     const x0 = Math.min(...xs), y0 = Math.min(...ys), span = Math.max(Math.max(...xs) - x0, Math.max(...ys) - y0);
     const k = (SIZE - 16) / span, ox = 8 + ((SIZE - 16) - (Math.max(...xs) - x0) * k) / 2, oy = 8 + ((SIZE - 16) - (Math.max(...ys) - y0) * k) / 2;
     const X = v => Math.round(ox + (v - x0) * k), Y = v => Math.round(oy + (v - y0) * k);
 
-    const paths = { delegates: "", cites: "", precedent: "" };
+    const paths = { delegates: "", cites: "", precedent: "", xL: "", xR: "", xD: "" };
     for (const e of g.edges) if (e.k in paths) paths[e.k] += `M${X(e.a.x)} ${Y(e.a.y)}L${X(e.b.x)} ${Y(e.b.y)}`;
     const dots = { L: "", D: "", R: "", P: "" };
     for (const n of g.nodes) {
@@ -41,7 +49,7 @@ const SIZE = 600;
     }
     const css = c => Object.entries(c).map(([key, v]) => `.${key}{${/^[LDRP]$/.test(key) ? "fill" : "stroke"}:${v}}`).join("");
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}">
-<style>path{fill:none}.e{stroke-width:.6}.delegates{stroke-opacity:.5}.cites{stroke-opacity:.18}.precedent{stroke-opacity:.22}${css(COLORS.light)}@media (prefers-color-scheme:dark){${css(COLORS.dark)}}</style>
+<style>path{fill:none}.e{stroke-width:.6}.delegates{stroke-opacity:.5}.cites{stroke-opacity:.18}.precedent{stroke-opacity:.22}.xL,.xR,.xD{stroke-opacity:.35}${css(COLORS.light)}@media (prefers-color-scheme:dark){${css(COLORS.dark)}}</style>
 ${Object.entries(paths).map(([kk, d]) => `<path class="e ${kk}" d="${d}"/>`).join("\n")}
 ${Object.entries(dots).filter(([, d]) => d).map(([kk, d]) => `<path class="${kk}" d="${d}"/>`).join("\n")}
 </svg>\n`;

@@ -36,6 +36,14 @@ footer a { transition: color 160ms; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 a.map img { display: block; width: calc(100% + 36px); height: auto; margin: 0 -18px 6px; aspect-ratio: 4 / 3; object-fit: contain; padding: 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
 a.map h2 { font-family: var(--font-display); font-size: 22px; line-height: 1.3; margin: 0; }
+/* 여러 법령 지도 카드: 넓은 화면에서는 그림 왼쪽, 글 오른쪽 */
+a.map.wide { grid-row: auto; grid-template-rows: none; grid-template-columns: minmax(0, 1fr); padding: 0 18px 18px; }
+a.map.wide .wide-body { display: grid; gap: 8px; align-content: start; }
+@media (min-width: 720px) {
+  a.map.wide { grid-template-columns: 300px minmax(0, 1fr); gap: 24px; padding: 0 24px 0 0; align-items: center; }
+  a.map.wide img { width: 300px; margin: 0; border-bottom: 0; border-right: 1px solid var(--line); }
+  a.map.wide .wide-body { padding: 20px 0; }
+}
 .nums { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 12px; font-variant-numeric: tabular-nums; align-content: start; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
 footer p { font-size: 13px; }
@@ -48,6 +56,14 @@ footer a { color: var(--law); }
     <h1>한국 법령 참조 지도</h1>
     <p>법률 조문을 장 순서대로 둥글게 놓고, 시행령·시행규칙 위임, 조문 사이 인용, 다른 법령 인용, 판례 연결을 한 그림에 모았습니다. 조문이나 판례를 누르면 연결된 것만 남고 원문과 연결 목록이 나옵니다.</p>
   </header>
+  <a class="map wide" href="multi-commercial.html">
+    <img src="thumbs/multi-commercial.svg" alt="" width="600" height="600" loading="lazy">
+    <div class="wide-body">
+      <h2>상법 중심 관련 법령 지도</h2>
+      <div class="nums"><span><span class="dot" style="background:var(--law)"></span>상법</span><span><span class="dot" style="background:var(--rule)"></span>보험업법</span><span><span class="dot" style="background:var(--decree)"></span>근로자퇴직급여 보장법</span></div>
+      <p>세 법이 서로의 조문을 가리키는 곳과 여러 법을 함께 다룬 판례를 한 그림에 모았습니다. 보험업법은 상법 조문을 218곳에서 끌어다 쓰고, 근로자퇴직급여 보장법은 보험업법과만 직접 이어집니다(13곳). 세 법 가운데 두 법 이상을 함께 다룬 판례는 51건입니다.</p>
+    </div>
+  </a>
   <section class="maps">
     <a class="map" href="privacy.html">
       <img src="thumbs/privacy.svg" alt="" width="600" height="600" loading="lazy">

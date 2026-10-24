@@ -1,0 +1,434 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Myeongjo:wght@700;800&display=swap">
+<style>
+/*__BASE_CSS__*/
+/* 여러 법령 지도: 법마다 색을 하나씩 (가운데 법은 --law) */
+.lawdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.pairs { display: grid; gap: 6px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13px; }
+.pair .n { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pair.none { color: var(--muted); }
+.back-links { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="h1"></h1>
+    <p class="lede" id="lede"></p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="main">
+    <section class="stage" aria-label="법령 사이 참조 그래프">
+      <div class="toolbar">
+        <div class="search">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="조문·제목·사건번호 검색 (예: 보험업법 2, 상법 638, 퇴직 8)" autocomplete="off" aria-label="검색">
+          <button class="search-clear" id="q-clear" type="button" aria-label="검색어 지우기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          <div class="results" id="results" hidden></div>
+        </div>
+        <div class="toggles" role="group" aria-label="보이는 연결">
+          <label class="tog" style="--c:var(--cite)"><input type="checkbox" id="t-cross" checked><span class="swatch"></span>법 사이 인용</label>
+          <label class="tog" style="--c:var(--prec)"><input type="checkbox" id="t-precedent" checked><span class="swatch"></span>함께 다룬 판례</label>
+          <label class="tog" style="--c:var(--muted)"><input type="checkbox" id="t-quiet" checked><span class="swatch"></span>연결 없는 조문</label>
+        </div>
+      </div>
+      <div class="canvas">
+        <div id="cy"></div>
+        <button class="btn" id="reset" type="button">전체 보기</button>
+      </div>
+    </section>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
+<script>
+const G = /*__DATA__*/null;
+const M = G.meta, LAWS = M.laws, CENTER = LAWS[0].key;
+const LAW = Object.fromEntries(LAWS.map(l => [l.key, l]));
+const LAW_VAR = ["--law", "--rule", "--decree", "--ext"];
+LAWS.forEach((l, i) => { l.cvar = LAW_VAR[i % LAW_VAR.length]; });
+const lawColor = k => k === "P" ? "var(--prec)" : `var(${LAW[k].cvar})`;
+const TIER = { L: "", D: " 시행령", R: " 시행규칙" };
+
+const byId = new Map(G.nodes.map(n => [n.id, n]));
+G.edges = G.edges.filter(e => byId.has(e.source) && byId.has(e.target));
+const outE = new Map(), inE = new Map();
+for (const e of G.edges) {
+  (outE.get(e.source) || outE.set(e.source, []).get(e.source)).push(e);
+  (inE.get(e.target) || inE.set(e.target, []).get(e.target)).push(e);
+}
+const lawOf = id => id.split("|")[0];
+const local = id => id.split("|")[1];
+const artKey = id => { const [, r] = local(id).split(":"); const [a, b] = r.split("-"); return +a * 1000 + (+b || 0); };
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const linked = id => (outE.get(id) || []).length + (inE.get(id) || []).length > 0;
+const fullLabel = n => n.kind === "P" ? n.label : `${LAW[n.law].name}${TIER[n.kind]} ${n.label.replace(/^(법|영|규칙) /, "")}`;
+for (const n of G.nodes) if (n.kind !== "P" && n.deleted && !n.title) n.title = "삭제";
+
+/* ---------- 배치: 가운데 법 바퀴 + 이어진 법 바퀴를 바깥에 ---------- */
+const TAU = Math.PI * 2, pos = {}, ang = {};
+const circMean = list => { let x = 0, y = 0; for (const a of list) { x += Math.cos(a); y += Math.sin(a); } return Math.atan2(y, x); };
+const rings = {};
+for (const lw of LAWS) {
+  const arts = G.nodes.filter(n => n.law === lw.key && n.kind === "L").sort((a, b) => artKey(a.id) - artKey(b.id));
+  let prevCh = null;
+  arts.forEach(n => { if (!n.chapter) n.chapter = prevCh || ""; prevCh = n.chapter; });
+  const chapters = [...new Set(arts.map(n => n.chapter))];
+  const GAP = 2.2, units = arts.length + GAP * chapters.length;
+  let u = 0, ch = null;
+  const a0 = {};
+  arts.forEach(n => { if (n.chapter !== ch) { ch = n.chapter; u += GAP; } a0[n.id] = -Math.PI / 2 + TAU * (u - GAP / 2) / units; u++; });
+  rings[lw.key] = { arts, a0, R: Math.max(260, arts.length * 14 / TAU), rot: 0, c: { x: 0, y: 0 },
+    chapters: chapters.map(c => ({ name: c, ids: arts.filter(n => n.chapter === c).map(n => n.id) })) };
+}
+// 법 a와 b를 잇는 조문 쌍(판례는 양쪽 조문을 이은 것으로 본다)
+function links(a, b) {
+  const pairs = [];
+  for (const e of G.edges) {
+    if (e.kind === "cross") {
+      const la = lawOf(e.source), lb = lawOf(e.target);
+      if (la === a && lb === b) pairs.push([e.source, e.target]);
+      if (la === b && lb === a) pairs.push([e.target, e.source]);
+    }
+  }
+  for (const p of G.nodes.filter(n => n.kind === "P")) {
+    const ts = (outE.get(p.id) || []).map(e => e.target);
+    for (const x of ts.filter(t => lawOf(t) === a)) for (const y of ts.filter(t => lawOf(t) === b)) pairs.push([x, y]);
+  }
+  return pairs;
+}
+const artAngle = id => { const n = byId.get(id), r = rings[n.law]; const L = n.kind === "L" ? id : n.anchor; return L && r.a0[L] !== undefined ? r.a0[L] + r.rot : null; };
+// 바깥 법은 조문 수가 적어도 가운데 법 원의 42% 이상 크기로 그려, 이어진 조문을 알아볼 수 있게 한다
+for (const lw of LAWS.slice(1)) rings[lw.key].R = Math.max(rings[lw.key].R, rings[CENTER].R * 0.42);
+const placed = [CENTER];
+for (const lw of LAWS.slice(1)) {
+  const k = lw.key, me = rings[k];
+  // 가장 많이 이어진, 이미 놓인 법을 짝으로 고른다
+  const partner = placed.map(p => [p, links(k, p)]).sort((x, y) => y[1].length - x[1].length)[0];
+  const [pk, pairs] = partner, pr = rings[pk];
+  let dir;
+  if (pk === CENTER) {
+    const as = pairs.map(([, t]) => artAngle(t)).filter(a => a !== null);
+    dir = as.length ? circMean(as) : TAU * placed.length / LAWS.length;
+  } else dir = Math.atan2(pr.c.y, pr.c.x); // 짝이 바깥 법이면 그 바깥쪽으로 이어 붙인다
+  const gap = Math.max(260, (pr.R + me.R) * 0.45);
+  const place = d => ({ x: pr.c.x + Math.cos(d) * (pr.R + gap + me.R), y: pr.c.y + Math.sin(d) * (pr.R + gap + me.R) });
+  let c = place(dir);
+  for (let t = 1; t < 24 && placed.some(p => p !== pk && Math.hypot(rings[p].c.x - c.x, rings[p].c.y - c.y) < rings[p].R + me.R + gap); t++) {
+    c = place(dir + (t % 2 ? 1 : -1) * Math.ceil(t / 2) * 0.25);
+  }
+  me.c = c;
+  // 짝과 이어진 조문들이 짝 쪽을 보도록 바퀴를 돌린다
+  const mine = pairs.map(([s]) => me.a0[byId.get(s).kind === "L" ? s : byId.get(s).anchor]).filter(a => a !== undefined);
+  if (mine.length) me.rot = Math.atan2(pr.c.y - c.y, pr.c.x - c.x) - circMean(mine);
+  placed.push(k);
+}
+for (const [k, r] of Object.entries(rings)) {
+  r.arts.forEach(n => { const a = r.a0[n.id] + r.rot; ang[n.id] = a; pos[n.id] = { x: r.c.x + r.R * Math.cos(a), y: r.c.y + r.R * Math.sin(a) }; });
+}
+// 시행령·시행규칙 조문: 위임 근거 법 조문 바깥쪽. 같은 근거를 둔 조문끼리는 한 칸씩 밖으로
+const stack = {};
+for (const n of G.nodes.filter(n => n.kind === "D" || n.kind === "R")) {
+  const r = rings[n.law], a = n.anchor && ang[n.anchor] !== undefined ? ang[n.anchor] : r.rot;
+  const s = stack[n.anchor || n.law] = (stack[n.anchor || n.law] || 0) + 1;
+  const rad = r.R + 26 + s * 14;
+  pos[n.id] = { x: r.c.x + rad * Math.cos(a), y: r.c.y + rad * Math.sin(a) };
+}
+// 판례: 다룬 조문들의 무게중심. 겹치지 않게 조금씩 흩는다
+G.nodes.filter(n => n.kind === "P").forEach((n, i) => {
+  const ps = (outE.get(n.id) || []).map(e => pos[e.target]).filter(Boolean);
+  const x = ps.reduce((s, p) => s + p.x, 0) / ps.length, y = ps.reduce((s, p) => s + p.y, 0) / ps.length;
+  const j = (i * 2.399963) % TAU, r = 18 + (i % 7) * 9;
+  pos[n.id] = { x: x + r * Math.cos(j), y: y + r * Math.sin(j) };
+});
+const R_MAX = Math.max(...Object.values(rings).map(r => r.R));
+const SPREAD = Math.max(1, rings[CENTER].R / 560);
+
+/* ---------- 그래프 ---------- */
+const deg = id => (outE.get(id) || []).length + (inE.get(id) || []).length;
+const elements = [];
+for (const n of G.nodes) {
+  let size = 7;
+  if (n.kind === "L") size = linked(n.id) ? 10 + Math.min(8, Math.sqrt(deg(n.id)) * 2) : 6;
+  if (n.kind === "D" || n.kind === "R") size = 7 + Math.min(4, Math.sqrt(deg(n.id)));
+  if (n.kind === "P") size = n.court === "대법원" ? 9 : 7;
+  elements.push({ group: "nodes", data: { id: n.id, law: n.law, size, short: n.kind === "P" ? n.label : n.label.replace(/^(법|영|규칙) 제/, "").replace("조의", "의").replace(/조$/, "") },
+    position: pos[n.id], classes: [n.kind, "law-" + n.law, n.kind !== "P" && !linked(n.id) ? "quiet" : "", n.deleted ? "gone" : ""].join(" ") });
+}
+for (const [k, r] of Object.entries(rings)) {
+  elements.push({ group: "nodes", data: { id: "NAME|" + k, name: LAW[k].name }, position: { ...r.c }, classes: "lawname", selectable: false });
+  if (k === CENTER) r.chapters.forEach((c, i) => {
+    const a = circMean(c.ids.map(id => ang[id])), rr = r.R - 48 * SPREAD;
+    elements.push({ group: "nodes", data: { id: "CH|" + i, ch: c.name.replace(/제(\d)/g, "$1"), count: c.ids.length }, position: { x: r.c.x + rr * Math.cos(a), y: r.c.y + rr * Math.sin(a) }, classes: "chapter", selectable: false });
+  });
+}
+G.edges.forEach((e, i) => elements.push({ group: "edges", data: { id: "e" + i, source: e.source, target: e.target, w: e.weight, law: lawOf(e.source) }, classes: e.kind + " from-" + lawOf(e.source) }));
+
+function tokens() {
+  const s = getComputedStyle(document.documentElement), v = k => s.getPropertyValue(k).trim();
+  const t = { fg: v("--fg"), muted: v("--muted"), bg: v("--surface"), prec: v("--prec"), cite: v("--cite"), sel: v("--sel"), body: v("--font-body"), disp: v("--font-display") };
+  t.law = Object.fromEntries(LAWS.map(l => [l.key, v(l.cvar)]));
+  return t;
+}
+let GROW = 1;
+const grow = v => () => v * GROW;
+function style(t) {
+  const st = [
+    { selector: "node", style: { width: n => n.data("size") * GROW, height: n => n.data("size") * GROW, label: "", "font-family": t.body, "font-size": 6, color: t.fg, "min-zoomed-font-size": 7, "text-valign": "bottom", "text-margin-y": 2 } },
+    { selector: "node.D", style: { shape: "round-rectangle" } },
+    { selector: "node.R", style: { shape: "round-triangle" } },
+    { selector: "node.P", style: { "background-color": t.prec, shape: "diamond" } },
+    { selector: "node.quiet", style: { opacity: 0.35 } },
+    { selector: "node.gone", style: { "background-opacity": 0.3, "border-width": grow(0.6), "border-color": t.muted, "border-style": "dashed" } },
+    { selector: "node.lawname", style: { label: "data(name)", width: 1, height: 1, "background-opacity": 0, "font-family": t.disp, "font-weight": 800, color: t.fg, "text-valign": "center", "text-wrap": "wrap", "text-max-width": 200, events: "no", "min-zoomed-font-size": 4 } },
+    { selector: "node.chapter", style: { label: "data(ch)", width: 1, height: 1, "background-opacity": 0, "font-family": t.disp, "font-weight": 700, color: t.muted, "text-valign": "center", "text-wrap": "wrap", "line-height": 1.3, "text-background-color": t.bg, "text-background-opacity": 0.8, events: "no", "min-zoomed-font-size": 4 } },
+    { selector: "edge", style: { "curve-style": "haystack", "haystack-radius": 0, width: n => (0.6 + Math.min(1.2, Math.sqrt(n.data("w")) * 0.3)) * GROW, opacity: 0.45 } },
+    { selector: "edge.precedent", style: { "line-color": t.prec, opacity: 0.4 } },
+    { selector: ".faded", style: { opacity: 0.06 } },
+    { selector: "edge.faded", style: { opacity: 0.02 } },
+    { selector: "node.chapter.faded, node.lawname.faded", style: { opacity: 0.3 } },
+    { selector: "node.hl", style: { label: "data(short)", "text-background-color": t.bg, "text-background-opacity": 0.85, "text-background-padding": 1, opacity: 1 } },
+    { selector: "edge.hl", style: { "curve-style": "straight", opacity: 0.9, width: grow(1.1), "target-arrow-shape": "triangle", "arrow-scale": 0.6 } },
+    { selector: "edge.hl.precedent", style: { "target-arrow-color": t.prec } },
+    { selector: "node.sel", style: { "border-width": grow(2), "border-color": t.sel, "border-style": "solid", "z-index": 10 } },
+  ];
+  for (const l of LAWS) {
+    st.splice(1, 0, { selector: "node.law-" + l.key, style: { "background-color": t.law[l.key] } });
+    st.push({ selector: "edge.cross.from-" + l.key, style: { "line-color": t.law[l.key] } }, { selector: "edge.hl.cross.from-" + l.key, style: { "target-arrow-color": t.law[l.key] } });
+  }
+  return st;
+}
+const cy = cytoscape({ container: document.getElementById("cy"), elements, layout: { name: "preset" }, style: style(tokens()),
+  minZoom: 0.01, maxZoom: 8, wheelSensitivity: 0.25, boxSelectionEnabled: false, autoungrabify: true });
+const fitAll = (animate = false) => animate
+  ? cy.animate({ fit: { eles: cy.elements(":visible"), padding: 16 }, duration: 300 })
+  : cy.fit(cy.elements(":visible"), 16);
+
+/* 장 이름·법 이름은 확대와 상관없이 화면에서 일정한 크기로, 겹치면 조문이 적은 장을 숨긴다 */
+function labels() {
+  const z = cy.zoom(), fs = Math.max(3, 11 / z);
+  cy.nodes(".lawname").forEach(n => { const big = rings[n.id().slice(5)].R * z > 90; n.style({ "font-size": (big ? 22 : 15) / z, "text-max-width": 200 / z * (big ? 1 : 0.7) }); });
+  const chs = cy.nodes(".chapter");
+  chs.style({ "font-size": fs, "text-max-width": fs * 8, "text-background-padding": fs * 0.2, "text-opacity": 1, "text-background-opacity": 0.8 });
+  const kept = cy.nodes(".lawname").map(n => { const p = n.position(), w = 6 * 22 / z, h = 30 / z; return { x1: p.x - w / 2, x2: p.x + w / 2, y1: p.y - h / 2, y2: p.y + h / 2 }; });
+  const gap = fs * 0.4, hit = (a, b) => a.x1 - gap < b.x2 && b.x1 - gap < a.x2 && a.y1 - gap < b.y2 && b.y1 - gap < a.y2;
+  chs.sort((a, b) => b.data("count") - a.data("count")).forEach(n => {
+    const len = [...n.data("ch")].length, w = Math.min(len, 8) * fs, h = Math.ceil(len / 8) * fs * 1.3, p = n.position();
+    const bb = { x1: p.x - w / 2, x2: p.x + w / 2, y1: p.y - h / 2, y2: p.y + h / 2 };
+    if (kept.some(k => hit(k, bb))) n.style({ "text-opacity": 0, "text-background-opacity": 0 }); else kept.push(bb);
+  });
+}
+let growQueued = false;
+function updateGrow() {
+  const g = Math.max(1, 0.45 / cy.zoom());
+  if (Math.abs(g - GROW) / GROW < 0.05 || growQueued) return;
+  growQueued = true;
+  requestAnimationFrame(() => { GROW = Math.max(1, 0.45 / cy.zoom()); growQueued = false; cy.style().update(); });
+}
+cy.on("zoom", () => { labels(); updateGrow(); });
+const restyle = () => { cy.style(style(tokens())); labels(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);
+new MutationObserver(restyle).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+/* ---------- 필터 ---------- */
+function applyFilters() {
+  const on = id => document.getElementById(id).checked;
+  cy.batch(() => {
+    cy.edges(".cross").style("display", on("t-cross") ? "element" : "none");
+    cy.edges(".precedent").style("display", on("t-precedent") ? "element" : "none");
+    cy.nodes(".P").style("display", on("t-precedent") ? "element" : "none");
+    cy.nodes(".quiet").style("display", on("t-quiet") ? "element" : "none");
+  });
+  if (current) select(current, false);
+}
+["t-cross", "t-precedent", "t-quiet"].forEach(id => document.getElementById(id).addEventListener("change", applyFilters));
+
+/* ---------- 선택과 패널 ---------- */
+let current = null;
+const panel = document.getElementById("panel");
+const narrow = matchMedia("(max-width: 960px)");
+const FOCUS_MAX = 2.5;
+function focusOn(eles) {
+  const box = cy.container().getBoundingClientRect();
+  const floor = panel.classList.contains("sheet") ? panel.getBoundingClientRect().top : innerHeight;
+  const top = Math.max(box.top, 0), bottom = Math.min(box.bottom, floor);
+  const vis = { y: top - box.top, w: box.width, h: Math.max(160, bottom - top) };
+  const bb = eles.boundingBox(), pad = 36;
+  const z = Math.min(FOCUS_MAX, (vis.w - 2 * pad) / Math.max(bb.w, 1), (vis.h - 2 * pad) / Math.max(bb.h, 1));
+  cy.animate({ zoom: z, pan: { x: vis.w / 2 - z * (bb.x1 + bb.w / 2), y: vis.y + vis.h / 2 - z * (bb.y1 + bb.h / 2) }, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 350 });
+}
+function setSheet(on) { panel.classList.toggle("sheet", on); document.body.classList.toggle("sheet-open", on); }
+function select(id, move = true) {
+  current = id;
+  const n = cy.$id(id);
+  cy.batch(() => {
+    cy.elements().removeClass("hl sel").addClass("faded");
+    n.closedNeighborhood().filter(el => el.style("display") !== "none").removeClass("faded").addClass("hl");
+    n.addClass("sel");
+  });
+  renderNode(byId.get(id));
+  setSheet(narrow.matches);
+  if (!move) return;
+  if (narrow.matches) { const t = cy.container().getBoundingClientRect().top; if (Math.abs(t) > 4) window.scrollTo({ top: scrollY + t, behavior: "instant" }); }
+  focusOn(n.closedNeighborhood(":visible"));
+}
+function clearSel() { current = null; cy.elements().removeClass("faded hl sel"); setSheet(false); renderHome(); }
+cy.on("tap", "node", e => { if (!e.target.hasClass("chapter") && !e.target.hasClass("lawname")) select(e.target.id()); });
+cy.on("tap", e => { if (e.target === cy) clearSel(); });
+document.getElementById("reset").addEventListener("click", () => { clearSel(); fitAll(true); });
+
+const lawUrl = n => "https://www.law.go.kr/법령/" + (LAW[n.law].name + TIER[n.kind]).replace(/\s/g, "") + "/" + n.label.replace(/^(법|영|규칙) /, "");
+function itemBtn(n, extra = "") {
+  const title = n.kind === "P" ? `${n.court || ""} ${n.date || ""} ${n.title || ""}` : (n.title || "");
+  return `<button class="item" type="button" data-id="${esc(n.id)}"><span class="no"><span class="dot" style="background:${lawColor(n.law)}"></span>${esc(n.kind === "P" ? n.label : fullLabel(n))}</span><span class="t">${esc(title)}</span><span class="n">${extra}</span></button>`;
+}
+function group(title, list, limit = 12) {
+  if (!list.length) return "";
+  const shown = list.slice(0, limit).map(([n, x]) => itemBtn(n, x)).join("");
+  const rest = list.length > limit ? `<button class="item more" type="button" data-more>외 ${list.length - limit}건 더 보기</button><div class="list" hidden>${list.slice(limit).map(([n, x]) => itemBtn(n, x)).join("")}</div>` : "";
+  return `<section><h3>${esc(title)} · ${list.length}</h3><div class="list">${shown}${rest}</div></section>`;
+}
+const sortArt = l => l.sort((a, b) => a[0].law === b[0].law ? (a[0].kind === b[0].kind ? artKey(a[0].id) - artKey(b[0].id) : a[0].kind.localeCompare(b[0].kind)) : LAWS.findIndex(x => x.key === a[0].law) - LAWS.findIndex(x => x.key === b[0].law));
+const nb = (id, dir, kind) => ((dir === "out" ? outE : inE).get(id) || []).filter(e => e.kind === kind).map(e => [byId.get(dir === "out" ? e.target : e.source), e.weight > 1 ? "×" + e.weight : ""]);
+
+function renderNode(n) {
+  let h = `<div><button class="btn" type="button" id="back">← 전체 요약으로</button></div>`;
+  if (n.kind !== "P") {
+    h += `<div><div class="kindtag"><span class="chip" style="--k:${lawColor(n.law)}">${esc(LAW[n.law].name + TIER[n.kind])}</span>${esc(n.chapter || "")}</div>
+      <h2>${esc(n.label)}${n.title ? " (" + esc(n.title) + ")" : ""}</h2></div>`;
+    if (n.deleted) h += `<p class="note">현행 법에서 삭제된 조문입니다.</p>`;
+    else h += `<div class="lawtext">${esc(n.text.replace(/^제\d+조(의\d+)?\([^)]*\)\s*/, ""))}</div>`;
+    h += `<div class="back-links"><a class="note" href="${lawUrl(n)}" target="_blank" rel="noopener">국가법령정보센터에서 보기 ↗</a><a class="note" href="${esc(LAW[n.law].page)}">${esc(LAW[n.law].name)} 지도에서 보기</a></div>`;
+    h += group("이 조문이 인용하는 다른 법 조문", sortArt(nb(n.id, "out", "cross")));
+    h += group("이 조문을 인용하는 다른 법 조문", sortArt(nb(n.id, "in", "cross")));
+    h += group("다른 법과 함께 다룬 판례", nb(n.id, "in", "precedent").sort((a, b) => (b[0].date || "").localeCompare(a[0].date || "")).map(([p]) => [p, p.court === "대법원" ? "대법원" : ""]), 15);
+    if (!linked(n.id)) h += `<p class="note">이 지도에 실린 다른 법과 직접 이어진 곳이 없는 조문입니다. 법 안의 연결은 ${esc(LAW[n.law].name)} 지도에서 볼 수 있습니다.</p>`;
+  } else {
+    h += `<div><div class="kindtag"><span class="chip" style="--k:var(--prec)">${esc(n.court || "법원")}</span>${esc(n.date)} 선고</div><h2>${esc(n.label)}</h2><div class="note">${esc(n.title)}</div></div>`;
+    if (n.text) h += `<section><h3>판시사항</h3><div class="lawtext">${esc(n.text)}</div></section>`;
+    h += `<p class="note"><a href="${esc(n.url)}" target="_blank" rel="noopener">판결문 보기 ↗</a></p>`;
+    for (const l of LAWS) h += group(`다룬 ${l.name} 조문`, sortArt(nb(n.id, "out", "precedent").filter(([x]) => x.law === l.key)), 30);
+  }
+  panel.innerHTML = h;
+  panel.scrollTop = 0;
+}
+
+function pairCount(a, b, kind) {
+  let s = 0;
+  if (kind === "cross") for (const e of G.edges) { if (e.kind === "cross" && ((lawOf(e.source) === a && lawOf(e.target) === b))) s += e.weight; }
+  else for (const p of G.nodes.filter(n => n.kind === "P")) { const ls = new Set((outE.get(p.id) || []).map(e => lawOf(e.target))); if (ls.has(a) && ls.has(b)) s++; }
+  return s;
+}
+function rank(title, rows, color) {
+  if (!rows.length) return "";
+  const max = Math.max(...rows.map(r => r[1]));
+  return `<section><h3>${esc(title)}</h3><div class="list">${rows.map(([n, v]) =>
+    `<button class="item" type="button" data-id="${esc(n.id)}"><span class="no">${esc(fullLabel(n))}</span><span class="t">${esc(n.title)}</span><span class="n">${v}</span><span class="bar" style="background:${color};width:${(v / max * 100).toFixed(1)}%"></span></button>`).join("")}</div></section>`;
+}
+function renderHome() {
+  const dot = k => `<span class="lawdot" style="background:${lawColor(k)}"></span>`;
+  let pairs = "";
+  for (let i = 0; i < LAWS.length; i++) for (let j = 0; j < LAWS.length; j++) {
+    if (i === j) continue;
+    const a = LAWS[i], b = LAWS[j], c = pairCount(a.key, b.key, "cross");
+    pairs += `<div class="pair${c ? "" : " none"}"><span>${dot(a.key)}${esc(a.name)} → ${dot(b.key)}${esc(b.name)}</span><span class="n">${c ? c + "곳 인용" : "없음"}</span></div>`;
+  }
+  let shared = "";
+  for (let i = 0; i < LAWS.length; i++) for (let j = i + 1; j < LAWS.length; j++) {
+    const c = pairCount(LAWS[i].key, LAWS[j].key, "precedent");
+    if (c) shared += `<div class="pair"><span>${dot(LAWS[i].key)}${esc(LAWS[i].name)} + ${dot(LAWS[j].key)}${esc(LAWS[j].name)}</span><span class="n">${c}건</span></div>`;
+  }
+  const inCross = id => (inE.get(id) || []).filter(e => e.kind === "cross").reduce((s, e) => s + e.weight, 0);
+  const top = (k, fn, n = 8) => G.nodes.filter(x => x.law === k).map(x => [x, fn(x.id)]).filter(r => r[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, n);
+  panel.innerHTML = `
+    <div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4.5V3M4.6 6.1 3.5 5M3 10.5H4.5M14.5 5l-1 1.1"/><path d="m9 9 11 3.6-4.6 1.8L13.6 19z"/></svg>
+      <p>그래프에서 조문이나 판례를 클릭하여 상세 내용을 확인하세요.</p></div>
+    <div><div class="kindtag">읽는 법</div>
+    <p class="note" style="margin:4px 0 0">가운데 큰 바퀴가 ${esc(LAW[CENTER].name)}, 바깥 바퀴가 이어진 법입니다. 둥근 점은 법 조문, 네모는 시행령, 세모는 시행규칙, 보라 마름모는 두 법 이상을 함께 다룬 판례입니다. 선은 다른 법 조문을 직접 가리키는 인용이고, 선 색은 인용하는 쪽 법의 색입니다. 흐린 점은 다른 법과 이어지지 않은 조문입니다.</p></div>
+    <section><h3>법 사이 조문 인용</h3><div class="pairs">${pairs}</div></section>
+    ${shared ? `<section><h3>함께 다룬 판례</h3><div class="pairs">${shared}</div></section>` : ""}
+    ${LAWS.map(l => rank(`다른 법이 가장 많이 인용하는 ${l.name} 조문`, top(l.key, inCross), lawColor(l.key))).join("")}`;
+}
+panel.addEventListener("click", e => {
+  const more = e.target.closest("[data-more]");
+  if (more) { more.nextElementSibling.hidden = false; more.remove(); return; }
+  if (e.target.closest("#back")) { clearSel(); fitAll(true); return; }
+  const b = e.target.closest("[data-id]");
+  if (b) select(b.dataset.id);
+});
+
+/* ---------- 검색: '보험업법 2', '상법 638', '퇴직 8' 처럼 법 이름 일부 + 조 번호 ---------- */
+const q = document.getElementById("q"), results = document.getElementById("results");
+function search(s) {
+  s = s.trim();
+  if (!s) return [];
+  let law = null;
+  for (const l of [...LAWS].sort((a, b) => b.name.length - a.name.length)) {
+    const short = l.name.replace(/\s/g, "");
+    const m = s.replace(/\s/g, "").match(/^([가-힣]+)/);
+    if (m && m[1].length >= 2 && (short.startsWith(m[1]) || short.includes(m[1]))) { law = l.key; s = s.replace(/^[가-힣\s]+(?=\d|제)/, "").trim(); break; }
+  }
+  const num = s.match(/^제?\s*(\d+)\s*(?:조)?\s*(?:의\s*(\d+))?$/);
+  const out = [];
+  for (const n of G.nodes) {
+    if (law && n.law !== law) continue;
+    let score = 0;
+    if (num && n.kind !== "P") {
+      const id = n.law + "|" + n.kind + ":" + (+num[1]) + (num[2] ? "-" + (+num[2]) : "");
+      if (n.id === id) score = n.kind === "L" ? 100 : 80;
+    }
+    if (!score && s.length >= 2) {
+      if (n.label.includes(s)) score = 60;
+      else if ((n.title || "").includes(s)) score = 50;
+    }
+    if (score) out.push([score + (linked(n.id) ? 5 : 0), n]);
+  }
+  return out.sort((a, b) => b[0] - a[0]).slice(0, 12).map(r => r[1]);
+}
+q.addEventListener("input", () => { const l = search(q.value); results.hidden = !l.length; results.innerHTML = l.map(n => itemBtn(n)).join(""); });
+q.addEventListener("keydown", e => { if (e.key === "Enter") { const f = results.querySelector("[data-id]"); if (f) f.click(); } if (e.key === "Escape") results.hidden = true; });
+document.getElementById("q-clear").addEventListener("click", () => { q.value = ""; results.hidden = true; results.innerHTML = ""; q.focus(); });
+results.addEventListener("click", e => {
+  const b = e.target.closest("[data-id]");
+  if (!b) return;
+  const n = byId.get(b.dataset.id);
+  if (n.kind === "P" && !document.getElementById("t-precedent").checked) { document.getElementById("t-precedent").checked = true; applyFilters(); }
+  if (!linked(n.id) && !document.getElementById("t-quiet").checked) { document.getElementById("t-quiet").checked = true; applyFilters(); }
+  results.hidden = true;
+  select(b.dataset.id);
+});
+document.addEventListener("click", e => { if (!e.target.closest(".search")) results.hidden = true; });
+const smallQ = matchMedia("(max-width: 600px)");
+q.dataset.long = q.placeholder;
+const setPlaceholder = () => { q.placeholder = smallQ.matches ? "조문·사건번호 (예: 보험업법 2)" : q.dataset.long; };
+setPlaceholder();
+smallQ.addEventListener("change", setPlaceholder);
+narrow.addEventListener("change", () => setSheet(narrow.matches && current !== null));
+
+/* ---------- 머리말·각주 ---------- */
+const d8 = s => `${s.slice(0, 4)}. ${+s.slice(4, 6)}. ${+s.slice(6)}.`;
+const nCross = G.edges.filter(e => e.kind === "cross").reduce((s, e) => s + e.weight, 0);
+const nPrec = G.nodes.filter(n => n.kind === "P").length;
+document.getElementById("h1").textContent = `${LAW[CENTER].name} 중심 관련 법령 지도`;
+document.getElementById("lede").textContent = `${LAWS.map(l => l.name).join("·")}이 서로의 조문을 어디서 가리키는지, 어떤 판례가 여러 법을 함께 다뤘는지를 한 그림에 모았습니다. 조문이나 판례를 누르면 연결된 것만 남고 원문과 연결 목록이 나옵니다.`;
+document.getElementById("eyebrow").textContent = LAWS.map(l => `${l.name} ${d8(l.tiers.L.efYd)}`).join(" · ") + " 시행본 기준";
+document.getElementById("stats").innerHTML = LAWS.map(l => `<span><span class="dot" style="background:${lawColor(l.key)}"></span>${esc(l.name)} <b>${rings[l.key].arts.length}</b>조</span>`).join("") +
+  `<span>법 사이 인용 <b>${nCross}</b> · 함께 다룬 판례 <b>${nPrec}</b></span>`;
+document.getElementById("foot").innerHTML = `
+  <p><b>자료.</b> ${esc(M.source)}에서 받은 각 법의 지도 자료(${LAWS.map(l => `<a href="${esc(l.page)}">${esc(l.name)}</a>`).join(", ")})를 엮었습니다.</p>
+  <p><b>연결 만드는 방법.</b> 법 사이 인용은 법·시행령·시행규칙 조문 본문의 「법령명」 제N조와, 그 뒤에 이어지는 같은 법·및·부터 같은 표현을 규칙으로 읽었습니다. 판례는 각 법 지도를 만들 때 모은 판례 ${M.precedentsChecked.toLocaleString()}건의 판결문에서 ${LAWS.length}개 법의 조문을 모두 다시 뽑아, 두 법 이상의 조문을 다룬 것만 남겼습니다.</p>
+  <p><b>주의.</b> 판례는 각 법 지도에서 모은 범위(상법은 최근 선고 1,000건 등) 안에서만 찾았습니다. 「법령명」 없이 '이 법', '같은 법'으로만 가리킨 다른 법 인용은 잡지 못할 수 있습니다. 실무에는 원문을 확인해 주세요.</p>`;
+
+applyFilters();
+fitAll();
+labels();
+updateGrow();
+renderHome();
+</script>
