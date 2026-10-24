@@ -3,11 +3,13 @@
 법률 하나를 중심으로 **시행령·시행규칙 위임, 조문 사이 인용, 다른 법령 인용, 판례 연결**을 한 그래프에 모은 인터랙티브 지도입니다.
 
 - 지도 보기: https://seong-hocho.github.io/korean-law-graph/
-  - [상법 중심 관련 법령 지도](https://seong-hocho.github.io/korean-law-graph/multi-commercial.html): 상법·보험업법·근로자퇴직급여 보장법 사이의 조문 인용과, 두 법 이상을 함께 다룬 판례
-  - [개인정보 보호법](https://seong-hocho.github.io/korean-law-graph/privacy.html): 법 128조 · 시행령 142조 · 판례 130건
+<!-- maps:start -->
+  - [상법 중심 관련 법령 지도](https://seong-hocho.github.io/korean-law-graph/multi-commercial.html): 상법·보험업법·근로자퇴직급여 보장법 사이의 조문 인용 233곳과, 두 법 이상을 함께 다룬 판례 51건
+  - [개인정보 보호법](https://seong-hocho.github.io/korean-law-graph/privacy.html): 법 127조 · 시행령 142조 · 판례 130건
   - [보험업법](https://seong-hocho.github.io/korean-law-graph/insurance.html): 법 253조 · 시행령 146조 · 시행규칙 61조 · 판례 145건
   - [상법](https://seong-hocho.github.io/korean-law-graph/commercial.html): 법 1,184조 · 시행령 59조 · 판례 456건 (본문에 상법이 나오는 판례 5,219건 중 최근 1,000건에서 추출)
   - [근로자퇴직급여 보장법](https://seong-hocho.github.io/korean-law-graph/retirement.html): 법 68조 · 시행령 79조 · 시행규칙 19조 · 판례 95건
+<!-- maps:end -->
 
 법 조문은 장 순서대로 안쪽 원에 놓입니다. 시행령·시행규칙·판례는 연결된 법 조문 쪽 바깥 고리에 놓이므로, 판례가 몰린 방향이 곧 분쟁이 많은 조문입니다. 조문이나 판례를 누르면 연결된 것만 남고, 옆 패널에 원문과 연결 목록이 나옵니다.
 

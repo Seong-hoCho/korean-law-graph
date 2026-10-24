@@ -267,6 +267,7 @@ function focusOn(eles) {
 function setSheet(on) { panel.classList.toggle("sheet", on); document.body.classList.toggle("sheet-open", on); }
 function select(id, move = true) {
   current = id;
+  setHash(id);
   const n = cy.$id(id);
   cy.batch(() => {
     cy.elements().removeClass("hl sel").addClass("faded");
@@ -279,7 +280,7 @@ function select(id, move = true) {
   if (narrow.matches) { const t = cy.container().getBoundingClientRect().top; if (Math.abs(t) > 4) window.scrollTo({ top: scrollY + t, behavior: "instant" }); }
   focusOn(n.closedNeighborhood(":visible"));
 }
-function clearSel() { current = null; cy.elements().removeClass("faded hl sel"); setSheet(false); renderHome(); }
+function clearSel() { current = null; setHash(null); cy.elements().removeClass("faded hl sel"); setSheet(false); renderHome(); }
 cy.on("tap", "node", e => { if (!e.target.hasClass("chapter") && !e.target.hasClass("lawname")) select(e.target.id()); });
 cy.on("tap", e => { if (e.target === cy) clearSel(); });
 document.getElementById("reset").addEventListener("click", () => { clearSel(); fitAll(true); });
@@ -305,13 +306,13 @@ function renderNode(n) {
       <h2>${esc(n.label)}${n.title ? " (" + esc(n.title) + ")" : ""}</h2></div>`;
     if (n.deleted) h += `<p class="note">현행 법에서 삭제된 조문입니다.</p>`;
     else h += `<div class="lawtext">${esc(n.text.replace(/^제\d+조(의\d+)?\([^)]*\)\s*/, ""))}</div>`;
-    h += `<div class="back-links"><a class="note" href="${lawUrl(n)}" target="_blank" rel="noopener">국가법령정보센터에서 보기 ↗</a><a class="note" href="${esc(LAW[n.law].page)}">${esc(LAW[n.law].name)} 지도에서 보기</a></div>`;
+    h += `<div class="back-links"><a class="note" href="${lawUrl(n)}" target="_blank" rel="noopener">국가법령정보센터에서 보기 ↗</a><a class="note" href="${esc(LAW[n.law].page)}#${encodeURI(local(n.id))}">${esc(LAW[n.law].name)} 지도에서 이 조문 보기</a></div>`;
     h += group("이 조문이 인용하는 다른 법 조문", sortArt(nb(n.id, "out", "cross")));
     h += group("이 조문을 인용하는 다른 법 조문", sortArt(nb(n.id, "in", "cross")));
     h += group("다른 법과 함께 다룬 판례", nb(n.id, "in", "precedent").sort((a, b) => (b[0].date || "").localeCompare(a[0].date || "")).map(([p]) => [p, p.court === "대법원" ? "대법원" : ""]), 15);
     if (!linked(n.id)) h += `<p class="note">이 지도에 실린 다른 법과 직접 이어진 곳이 없는 조문입니다. 법 안의 연결은 ${esc(LAW[n.law].name)} 지도에서 볼 수 있습니다.</p>`;
   } else {
-    h += `<div><div class="kindtag"><span class="chip" style="--k:var(--prec)">${esc(n.court || "법원")}</span>${esc(n.date)} 선고</div><h2>${esc(n.label)}</h2><div class="note">${esc(n.title)}</div></div>`;
+    h += `<div><div class="kindtag"><span class="chip" style="--k:var(--prec)">${esc(n.court || "법원")}</span>${n.date ? esc(n.date) + " 선고" : ""}</div><h2>${esc(n.label)}</h2><div class="note">${esc(n.title)}</div></div>`;
     if (n.text) h += `<section><h3>판시사항</h3><div class="lawtext">${esc(n.text)}</div></section>`;
     h += `<p class="note"><a href="${esc(n.url)}" target="_blank" rel="noopener">판결문 보기 ↗</a></p>`;
     for (const l of LAWS) h += group(`다룬 ${l.name} 조문`, sortArt(nb(n.id, "out", "precedent").filter(([x]) => x.law === l.key)), 30);
@@ -395,12 +396,14 @@ function search(s) {
 q.addEventListener("input", () => { const l = search(q.value); results.hidden = !l.length; results.innerHTML = l.map(n => itemBtn(n)).join(""); });
 q.addEventListener("keydown", e => { if (e.key === "Enter") { const f = results.querySelector("[data-id]"); if (f) f.click(); } if (e.key === "Escape") results.hidden = true; });
 document.getElementById("q-clear").addEventListener("click", () => { q.value = ""; results.hidden = true; results.innerHTML = ""; q.focus(); });
+function reveal(n) {
+  if (n.kind === "P" && !document.getElementById("t-precedent").checked) { document.getElementById("t-precedent").checked = true; applyFilters(); }
+  if (!linked(n.id) && !document.getElementById("t-quiet").checked) { document.getElementById("t-quiet").checked = true; applyFilters(); }
+}
 results.addEventListener("click", e => {
   const b = e.target.closest("[data-id]");
   if (!b) return;
-  const n = byId.get(b.dataset.id);
-  if (n.kind === "P" && !document.getElementById("t-precedent").checked) { document.getElementById("t-precedent").checked = true; applyFilters(); }
-  if (!linked(n.id) && !document.getElementById("t-quiet").checked) { document.getElementById("t-quiet").checked = true; applyFilters(); }
+  reveal(byId.get(b.dataset.id));
   results.hidden = true;
   select(b.dataset.id);
 });
@@ -431,4 +434,16 @@ fitAll();
 labels();
 updateGrow();
 renderHome();
+/* ---------- 주소로 조문 열기: 페이지#k1|L:2 (법 키|조문) ---------- */
+// 선택하면 주소 끝을 그 조문으로 바꿔(방문 기록은 늘리지 않음) 그대로 복사해 공유할 수 있게 한다
+const setHash = id => history.replaceState(null, "", id ? "#" + encodeURI(id) : location.pathname + location.search);
+function fromHash() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  if (!id) { if (current) clearSel(); return; }
+  if (!byId.has(id) || id === current) return;
+  reveal(byId.get(id));
+  select(id);
+}
+addEventListener("hashchange", fromHash);
+fromHash();
 </script>

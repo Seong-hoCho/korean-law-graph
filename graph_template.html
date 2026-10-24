@@ -205,7 +205,7 @@ for (const e of G.edges) {
   (inE.get(e.target) || inE.set(e.target, []).get(e.target)).push(e);
 }
 const artKey = id => { const [, r] = id.split(":"); const [a, b] = r.split("-"); return +a * 1000 + (+b || 0); };
-const fmtDate = d => (d || "").replace(/\./g, ".");
+const fmtDate = d => (d && !d.startsWith("0001") ? d : ""); // 법제처는 모르는 선고일을 0001.01.01로 준다
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const isArt = k => k === "L" || k === "D" || k === "R";
 for (const n of G.nodes) {
@@ -439,6 +439,7 @@ function setSheet(on) {
 
 function select(id, move = true) {
   current = id;
+  setHash(id);
   const n = cy.$id(id);
   cy.batch(() => {
     cy.elements().removeClass("hl sel").addClass("faded");
@@ -457,6 +458,7 @@ function select(id, move = true) {
 }
 function clearSel() {
   current = null;
+  setHash(null);
   cy.elements().removeClass("faded hl sel");
   setSheet(false);
   renderHome();
@@ -501,7 +503,7 @@ function renderNode(n) {
     html += group("인용하는 다른 법령", neigh(n.id, "out", "external"));
     html += group("이 조문을 다룬 판례", sortPrec(neigh(n.id, "in", "precedent").map(([p]) => [p, p.court === "대법원" ? "대법원" : ""])), 15);
   } else if (n.kind === "P") {
-    html += `<div><div class="kindtag"><span class="chip" style="--k:var(--prec)">${esc(n.court || "법원")}</span>${esc(fmtDate(n.date))} 선고 · ${esc(n.caseType || "")}</div>
+    html += `<div><div class="kindtag"><span class="chip" style="--k:var(--prec)">${esc(n.court || "법원")}</span>${[fmtDate(n.date) && esc(fmtDate(n.date)) + " 선고", esc(n.caseType || "")].filter(Boolean).join(" · ")}</div>
       <h2>${esc(n.label)}</h2><div class="note">${esc(n.title)}</div></div>`;
     if (n.text) html += `<section><h3>판시사항</h3><div class="lawtext">${esc(n.text)}</div></section>`;
     html += `<p class="note">조문 연결 근거: ${esc(n.basis)}${n.basis === "판례내용" ? " (판결문 본문에서 자동 추출)" : ""}. <a href="${esc(n.url)}" target="_blank" rel="noopener">판결문 보기 ↗</a></p>`;
@@ -588,12 +590,15 @@ document.getElementById("q-clear").addEventListener("click", () => {
   results.innerHTML = "";
   q.focus();
 });
+// 숨겨 둔 종류(판례·다른 법령)를 고르면 그 종류를 다시 켠다
+function reveal(n) {
+  if (n.kind === "P" && !document.getElementById("t-precedent").checked) { document.getElementById("t-precedent").checked = true; applyFilters(); }
+  if (n.kind === "X" && !document.getElementById("t-external").checked) { document.getElementById("t-external").checked = true; applyFilters(); }
+}
 results.addEventListener("click", e => {
   const b = e.target.closest("[data-id]");
   if (!b) return;
-  const n = byId.get(b.dataset.id);
-  if (n.kind === "P" && !document.getElementById("t-precedent").checked) { document.getElementById("t-precedent").checked = true; applyFilters(); }
-  if (n.kind === "X" && !document.getElementById("t-external").checked) { document.getElementById("t-external").checked = true; applyFilters(); }
+  reveal(byId.get(b.dataset.id));
   results.hidden = true;
   select(b.dataset.id);
 });
@@ -618,4 +623,16 @@ fitAll();
 chapterLabels();
 updateGrow();
 renderHome();
+/* ---------- 주소로 조문 열기: 페이지#L:17, #P:판례일련번호 ---------- */
+// 선택하면 주소 끝을 그 조문으로 바꿔(방문 기록은 늘리지 않음) 그대로 복사해 공유할 수 있게 한다
+const setHash = id => history.replaceState(null, "", id ? "#" + encodeURI(id) : location.pathname + location.search);
+function fromHash() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  if (!id) { if (current) clearSel(); return; }
+  if (!byId.has(id) || id === current) return;
+  reveal(byId.get(id));
+  select(id);
+}
+addEventListener("hashchange", fromHash);
+fromHash();
 </script>

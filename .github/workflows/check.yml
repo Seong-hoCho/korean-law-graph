@@ -1,0 +1,22 @@
+name: 점검
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # 데이터 검사 + docs/·README가 템플릿·데이터로 다시 만든 결과와 같은지
+      - run: python check.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --no-save playwright@1.47.2 && npx playwright install --with-deps chromium
+      # 모든 페이지를 브라우저로 열어 오류·그래프·조문 주소(#L:…) 확인
+      - run: node tools/smoke.js
