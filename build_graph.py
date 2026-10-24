@@ -57,18 +57,24 @@ def find_mst(name):
     d = L.search("law", name, display=50)["LawSearch"]
     for x in L.as_list(d.get("law")):
         if x["법령명한글"] == name and x["현행연혁코드"] == "현행":
-            return x["법령일련번호"]
-    return None
+            # 기본정보의 시행일자는 단계적 시행 조항의 마지막 날짜일 수 있어, 검색 결과의 (현행) 시행일자를 따로 둔다
+            return x["법령일련번호"], x["시행일자"]
+    return None, None
 
 
 def load_articles(mst, prefix):
     law = L.service("law", MST=mst)["법령"]
-    arts, chapter = [], ""
+    arts, part, chapter = [], "", ""
     for u in L.as_list(law["조문"]["조문단위"]):
         if u["조문여부"] != "조문":
-            m = re.search(r"제\d+장\s*(.+)", u.get("조문내용", ""))
+            # 편(編)이 있는 법(상법 등)은 장 이름이 편마다 겹치므로 '제3편 제4장 주식회사'처럼 편을 붙인다
+            head = u.get("조문내용", "")
+            m = re.search(r"제\d+편\s*(.+)", head)
             if m:
-                chapter = re.sub(r"\s*<.*", "", m.group(0)).strip()
+                part = chapter = re.sub(r"\s*<.*", "", m.group(0)).strip()
+            m = re.search(r"제\d+장\s*(.+)", head)
+            if m:
+                chapter = ((part + " ") if part else "") + re.sub(r"\s*<.*", "", m.group(0)).strip()
             continue
         no, sub = u["조문번호"], u.get("조문가지번호") or "0"
         parts = flatten(u)
@@ -164,9 +170,11 @@ def three_tier(law_mst):
 
 
 def precedents(main):
-    seen, out = set(), []
+    """본문에 법령명이 나오는 판례를 최근 선고 순으로 최대 1,000건. (목록, 전체 건수)"""
+    seen, out, total = set(), [], 0
     for page in range(1, 11):
         d = L.search("prec", main, search="2", display=100, page=page)["PrecSearch"]
+        total = int(d.get("totalCnt") or 0)
         items = L.as_list(d.get("prec"))
         if not items:
             break
@@ -175,15 +183,16 @@ def precedents(main):
                 continue
             seen.add(it["판례일련번호"])
             out.append(it)
-    return out
+    return out, total
 
 
 def main(main_name, out_path):
     tiers = {}
     for p in HEAD:
-        mst = find_mst(main_name + SUFFIX[p])
+        mst, ef = find_mst(main_name + SUFFIX[p])
         if mst:
-            tiers[p] = (mst, *load_articles(mst, p))
+            info, arts = load_articles(mst, p)
+            tiers[p] = (mst, {**info, "시행일자": ef or info["시행일자"]}, arts)
     if "L" not in tiers:
         sys.exit(f"법령을 찾지 못함: {main_name}")
     all_arts = [a for _, _, arts in tiers.values() for a in arts]
@@ -219,14 +228,16 @@ def main(main_name, out_path):
                 add_edge(a["id"], tgt, "cites")
 
     max_no = {p: max(int(a["id"][2:].split("-")[0]) for a in arts) for p, (_, _, arts) in tiers.items()}
-    precs = precedents(main_name)
+    precs, prec_total = precedents(main_name)
     print(f"precedents listed: {len(precs)}", file=sys.stderr)
     basis_count = {"참조조문": 0, "판결요지": 0, "판례내용": 0, "없음": 0}
+    unavailable = 0
     for i, it in enumerate(precs):
         try:
             p = L.service("prec", ID=it["판례일련번호"])["PrecService"]
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001  하급심 일부는 목록에만 있고 본문을 주지 않는다
             print("skip", it["사건번호"], e, file=sys.stderr)
+            unavailable += 1
             continue
         refs, basis = set(), "없음"
         for field, label in (("참조조문", "참조조문"), (None, "판결요지"), ("판례내용", "판례내용")):
@@ -267,6 +278,9 @@ def main(main_name, out_path):
         "main": main_name,
         "tiers": {p: info(p) for p in tiers},
         "precedentsListed": len(precs),
+        "precedentsTotal": prec_total,
+        "precedentsUnavailable": unavailable,
+        "precedentsFrom": min((x["선고일자"] for x in precs if x.get("선고일자")), default=""),
         "precedentBasis": basis_count,
         "source": "법제처 국가법령정보 공동활용 Open API (DRF)",
     }

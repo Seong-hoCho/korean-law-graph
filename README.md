@@ -5,6 +5,7 @@
 - 지도 보기: https://seong-hocho.github.io/korean-law-graph/
   - [개인정보 보호법](https://seong-hocho.github.io/korean-law-graph/privacy.html): 법 128조 · 시행령 142조 · 판례 130건
   - [보험업법](https://seong-hocho.github.io/korean-law-graph/insurance.html): 법 253조 · 시행령 146조 · 시행규칙 61조 · 판례 145건
+  - [상법](https://seong-hocho.github.io/korean-law-graph/commercial.html): 법 1,184조 · 시행령 59조 · 판례 456건 (본문에 상법이 나오는 판례 5,219건 중 최근 1,000건에서 추출)
 
 법 조문은 장 순서대로 안쪽 원에 놓입니다. 시행령·시행규칙·판례는 연결된 법 조문 쪽 바깥 고리에 놓이므로, 판례가 몰린 방향이 곧 분쟁이 많은 조문입니다. 조문이나 판례를 누르면 연결된 것만 남고, 옆 패널에 원문과 연결 목록이 나옵니다.
 
@@ -26,6 +27,12 @@ python build_graph.py "상법" data/commercial.json
 python make_page.py data/commercial.json docs/commercial.html
 ```
 
+첫 화면 카드의 축소 그림은 [Playwright](https://playwright.dev)로 뽑습니다(`docs/thumbs/*.svg`).
+
+```bash
+node tools/thumbs.js commercial
+```
+
 시행령·시행규칙이 있으면 자동으로 함께 들어갑니다. 법제처 응답은 `data/raw/`에 캐시됩니다.
 
 법제처 Open API 인증값(OC)은 `LAW_OC` 환경변수로 넣습니다. 넣지 않으면 공개 테스트값(`test`)을 쓰는데, 많이 호출할 때는 [공동활용 신청](https://open.law.go.kr)으로 받은 값을 쓰는 편이 안전합니다.
@@ -36,6 +43,7 @@ python make_page.py data/commercial.json docs/commercial.html
 | `build_graph.py` | 조문·위임·인용·판례를 모아 그래프 JSON 생성 |
 | `make_page.py` | 그래프 JSON을 `graph_template.html`에 넣어 단일 HTML 생성 |
 | `data/*.json` | 생성된 그래프 데이터 |
+| `tools/thumbs.js` | 지도 페이지에서 첫 화면용 축소 그림(SVG) 생성 |
 | `docs/` | GitHub Pages로 공개되는 페이지 |
 
 ## 주의

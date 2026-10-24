@@ -6,84 +6,108 @@
 <title>보험업법 참조 지도</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Myeongjo:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Myeongjo:wght@700;800&display=swap">
 <style>
-/* Layout: 법 조문을 장(章) 순서대로 둥글게 놓은 '조문 바퀴' — 안쪽 원이 법, 그 바깥이 시행령, 가장 바깥이 판례·다른 법령. 오른쪽 패널에 선택한 조문의 연결 관계를 보여 준다. */
+/* Layout: 법 조문을 장(章) 순서대로 둥글게 놓은 '조문 바퀴' — 안쪽 원이 법, 그 바깥이 시행령, 가장 바깥이 판례·다른 법령. 넓은 화면은 오른쪽 패널, 좁은 화면은 아래 패널(선택 중에는 바닥 시트)에 선택한 조문의 연결 관계를 보여 준다. */
 :root {
-  --bg: #f4f5f2;
-  --surface: #ffffff;
-  --fg: #1c2229;
-  --muted: #5f6a72;
-  --line: #d9ddd6;
-  --law: #1f5a8a;
+  --bg: #f2eee4;
+  --surface: #fffdf7;
+  --fg: #231f19;
+  --muted: #675e51;
+  --line: #dbd2c2;
+  --law: #1f4b89;
   --decree: #b26b12;
   --prec: #8a3a6c;
   --rule: #2c8577;
   --ext: #7d7264;
   --cite: #3d7cb5;
-  --sel: #d43c2c;
+  --sel: var(--fg); /* 선택·초점 표시는 따로 강조색을 두지 않고 먹색 */
   --font-display: "Nanum Myeongjo", "Noto Serif KR", "Batang", serif;
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #12161a; --surface: #1a2026; --fg: #e6e9e4; --muted: #96a0a6; --line: #2c343b;
-    --law: #6aa6da; --decree: #e3a14a; --prec: #d27fb2; --rule: #5cc2b1; --ext: #b3a898; --cite: #7fb2e3; --sel: #ff7a63;
+    --bg: #16140f; --surface: #1f1c16; --fg: #ece6da; --muted: #a59c8c; --line: #353026;
+    --law: #76a0db; --decree: #e3a14a; --prec: #d27fb2; --rule: #5cc2b1; --ext: #b3a898; --cite: #7fb2e3;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #12161a; --surface: #1a2026; --fg: #e6e9e4; --muted: #96a0a6; --line: #2c343b;
-  --law: #6aa6da; --decree: #e3a14a; --prec: #d27fb2; --rule: #5cc2b1; --ext: #b3a898; --cite: #7fb2e3; --sel: #ff7a63;
+  --bg: #16140f; --surface: #1f1c16; --fg: #ece6da; --muted: #a59c8c; --line: #353026;
+  --law: #76a0db; --decree: #e3a14a; --prec: #d27fb2; --rule: #5cc2b1; --ext: #b3a898; --cite: #7fb2e3;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
   background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.55;
+  word-break: keep-all; overflow-wrap: break-word;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 20px 32px;
+  padding-block: 32px 40px;
 }
-.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 16px; }
+.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 24px; }
 header { display: grid; gap: 6px; }
-.eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
-h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(26px, 3.4vw, 38px); line-height: 1.2; margin: 0; text-wrap: balance; }
+.eyebrow { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(33px, 3.4vw, 46px); line-height: 1.2; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
 .lede { margin: 0; color: var(--muted); max-width: 70ch; }
 .stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
-.stats b { color: var(--fg); font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.stats b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
 
-.main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
-@media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } }
+/* 넓은 화면은 패널을 그래프 왼쪽에, 좁은 화면은 문서 순서대로 그래프 아래에 */
+.main { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 24px; align-items: start; }
+.main > .panel { order: -1; }
+@media (max-width: 960px) { .main { grid-template-columns: minmax(0, 1fr); } .main > .panel { order: 0; } }
 
-.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; min-width: 0; }
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.stage { background: var(--surface); border-radius: 2px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .search { position: relative; flex: 1 1 220px; min-width: 0; }
-.search input { width: 100%; font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+.search input { width: 100%; font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 1px; background: var(--bg); color: var(--fg); }
 .search input:focus-visible, button:focus-visible, label.tog:focus-within { outline: 2px solid var(--sel); outline-offset: 1px; }
-.results { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; max-height: 300px; overflow-y: auto; box-shadow: 0 8px 24px rgb(0 0 0 / .12); }
+.results { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line); border-radius: 2px; max-height: 300px; overflow-y: auto; box-shadow: 0 8px 24px rgb(0 0 0 / .12); }
 .toggles { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; }
-label.tog { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; border-radius: 4px; }
+label.tog { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; border-radius: 1px; }
 label.tog input { accent-color: var(--fg); margin: 0; }
-.swatch { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
-.btn { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 6px; cursor: pointer; }
+.swatch { width: 16px; height: 3px; border-radius: 1px; display: inline-block; }
+.btn { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 1px; cursor: pointer; }
 .btn:hover { border-color: var(--muted); }
+.canvas { position: relative; }
+.canvas .btn { position: absolute; top: 10px; right: 10px; z-index: 2; background: var(--surface); }
 #cy { width: 100%; height: min(78vh, 820px); min-height: 440px; }
+@media (max-width: 600px) {
+  body { padding-block: 20px 32px; }
+  .wrap, .main { gap: 16px; }
+  h1 { font-size: 33px; }
+  header { gap: 4px; }
+  .lede { font-size: 13px; }
+  .stats { font-size: 12.5px; gap: 2px 12px; }
+  .toolbar { padding: 8px 10px; gap: 8px; }
+  .toggles { gap: 4px 10px; }
+  .swatch { width: 10px; }
+  #cy { height: 70svh; min-height: 360px; }
+  aside.panel { padding: 16px; }
+}
 
-aside.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; max-height: calc(min(78vh, 820px) + 52px); overflow-y: auto; }
-@media (max-width: 960px) { aside.panel { max-height: none; } }
+aside.panel { background: var(--surface); border-radius: 2px; padding: 22px; display: grid; gap: 16px; min-width: 0; max-height: calc(min(78vh, 820px) + 63px); overflow-y: auto; }
+@media (max-width: 960px) {
+  aside.panel { max-height: none; }
+  /* 선택 중에는 패널을 바닥 시트로 띄워, 그래프와 원문을 한 화면에서 본다 */
+  aside.panel.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 45svh; border-radius: 2px 2px 0 0; border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 24px rgb(0 0 0 / .16); padding: 14px max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  body.sheet-open { padding-bottom: calc(45svh + 32px); }
+}
 .panel h2 { font-family: var(--font-display); font-size: 22px; margin: 0; line-height: 1.25; text-wrap: balance; }
 .panel h3 { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin: 0 0 6px; }
-.kindtag { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.chip { display: inline-flex; align-items: center; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; }
-.lawtext { white-space: pre-wrap; font-size: 13px; line-height: 1.65; background: var(--bg); border-radius: 6px; padding: 10px 12px; max-height: 260px; overflow-y: auto; }
+.kindtag { font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+/* 종류 색(주황·청록 등)은 글자 대비가 모자라므로 테두리에만 쓰고 글자는 본문색 */
+.chip { display: inline-flex; align-items: center; font-size: 11px; padding: 1px 7px; border-radius: 1px; border: 1px solid var(--k, currentColor); color: var(--fg); }
+.lawtext { white-space: pre-wrap; font-size: 13px; line-height: 1.65; background: var(--bg); border-radius: 1px; padding: 10px 12px; max-height: 260px; overflow-y: auto; }
 .list { display: grid; gap: 2px; }
-.item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; text-align: left; font: inherit; font-size: 13px; padding: 5px 6px; border: 0; background: none; color: var(--fg); border-radius: 5px; cursor: pointer; width: 100%; }
+.item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; text-align: left; font: inherit; font-size: 13px; padding: 8px 6px; border: 0; background: none; color: var(--fg); border-radius: 1px; cursor: pointer; width: 100%; }
 .item:hover { background: var(--bg); }
-.item .no { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.item .no { font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .item .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
-.item .n { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.bar { height: 4px; border-radius: 2px; margin-top: 3px; grid-column: 2 / 4; }
+.item .n { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar { height: 4px; border-radius: 1px; margin-top: 3px; grid-column: 2 / 4; }
 .more { font-size: 12px; color: var(--muted); padding: 2px 6px; }
 .note { font-size: 12.5px; color: var(--muted); }
 a { color: var(--law); }
@@ -99,7 +123,7 @@ footer p { margin: 0; }
   <header>
     <div class="eyebrow" id="eyebrow"></div>
     <h1>보험업법 참조 지도</h1>
-    <p class="lede">보험업법 조문을 장 순서대로 둥글게 놓고, 하위 법령 위임·조문 사이 인용·다른 법령 인용·판례 연결을 한 그림에 모았습니다. 조문이나 판례를 누르면 연결된 것만 남고, 오른쪽에 원문과 연결 목록이 나옵니다.</p>
+    <p class="lede">보험업법 조문을 장 순서대로 둥글게 놓고, 하위 법령 위임·조문 인용·판례 연결을 한 그림에 모았습니다. 조문이나 판례를 누르면 연결된 것만 남고 원문과 연결 목록이 나옵니다.</p>
     <div class="stats" id="stats"></div>
   </header>
 
@@ -116,9 +140,11 @@ footer p { margin: 0; }
           <label class="tog"><input type="checkbox" id="t-precedent" checked><span class="swatch" style="background:var(--prec)"></span>판례</label>
           <label class="tog"><input type="checkbox" id="t-external"><span class="swatch" style="background:var(--ext)"></span>다른 법령</label>
         </div>
+      </div>
+      <div class="canvas">
+        <div id="cy"></div>
         <button class="btn" id="reset" type="button">전체 보기</button>
       </div>
-      <div id="cy"></div>
     </section>
     <aside class="panel" id="panel" aria-live="polite"></aside>
   </div>
@@ -218,6 +244,8 @@ function placeRing(items, base, step, minArc) {
 // 법 조문 수에 맞춰 안쪽 원 크기를 정하고, 바깥 고리는 앞 고리가 실제로 차지한 반지름 다음에 놓는다
 const R_LAW = Math.max(300, law.length * 14 / TAU);
 law.forEach(n => pos[n.id] = { x: R_LAW * Math.cos(ang[n.id]), y: R_LAW * Math.sin(ang[n.id]) });
+// 조문이 많아 원이 커지면(상법 등) 바깥 고리 간격과 겹침 판정 간격도 같은 비율로 넓힌다. 보험업법 크기(반지름 약 560)가 기준
+const SPREAD = Math.max(1, R_LAW / 560);
 
 function placeSub(kind, base, anchors) { // 하위 법령: 위임 근거(없으면 인용하는 조문) 각도 쪽으로
   const list = G.nodes.filter(n => n.kind === kind).sort((a, b) => artKey(a.id) - artKey(b.id));
@@ -230,12 +258,12 @@ function placeSub(kind, base, anchors) { // 하위 법령: 위임 근거(없으�
     prev = a;
     return { id: n.id, a };
   });
-  return placeRing(items, base, 15, 10);
+  return placeRing(items, base, 15 * SPREAD, 10 * SPREAD);
 }
-let ring = placeSub("D", R_LAW + 80, ["L"]);
-ring = placeSub("R", ring + 50, ["L", "D"]);
-ring = placeRing(G.nodes.filter(n => n.kind === "P").map(n => ({ id: n.id, a: anchorAngle(n.id, ["L", "D", "R"]) ?? 0 })), ring + 60, 13, 9);
-placeRing(G.nodes.filter(n => n.kind === "X").map(n => ({ id: n.id, a: anchorAngle(n.id, ["L", "D", "R"]) ?? 0 })), ring + 70, 22, 46);
+let ring = placeSub("D", R_LAW + 80 * SPREAD, ["L"]);
+ring = placeSub("R", ring + 50 * SPREAD, ["L", "D"]);
+ring = placeRing(G.nodes.filter(n => n.kind === "P").map(n => ({ id: n.id, a: anchorAngle(n.id, ["L", "D", "R"]) ?? 0 })), ring + 60 * SPREAD, 13 * SPREAD, 9 * SPREAD);
+placeRing(G.nodes.filter(n => n.kind === "X").map(n => ({ id: n.id, a: anchorAngle(n.id, ["L", "D", "R"]) ?? 0 })), ring + 70 * SPREAD, 22 * SPREAD, 46 * SPREAD);
 
 /* ---------- 그래프 ---------- */
 const deg = id => (outE.get(id) || []).length + (inE.get(id) || []).length;
@@ -254,54 +282,88 @@ for (const n of G.nodes) {
   });
 }
 G.chapters.forEach((c, i) => {
-  const r = R_LAW - 48;
-  elements.push({ group: "nodes", data: { id: "CH" + i, ch: c.name.replace(/^제/, "") }, position: { x: r * Math.cos(c.a), y: r * Math.sin(c.a) }, classes: "chapter", selectable: false, grabbable: false });
+  const r = R_LAW - 48 * SPREAD;
+  elements.push({ group: "nodes", data: { id: "CH" + i, ch: c.name.replace(/제(\d)/g, "$1") }, position: { x: r * Math.cos(c.a), y: r * Math.sin(c.a) }, classes: "chapter", selectable: false, grabbable: false });
 });
 G.edges.forEach((e, i) => elements.push({ group: "edges", data: { id: "e" + i, source: e.source, target: e.target, kind: e.kind, w: e.weight }, classes: e.kind }));
 
 function tokens() {
   const s = getComputedStyle(document.documentElement);
   const v = k => s.getPropertyValue(k).trim();
-  return { fg: v("--fg"), muted: v("--muted"), bg: v("--surface"), line: v("--line"), law: v("--law"), decree: v("--decree"), rule: v("--rule"), prec: v("--prec"), ext: v("--ext"), cite: v("--cite"), sel: v("--sel"), mono: v("--font-mono") };
+  return { fg: v("--fg"), muted: v("--muted"), bg: v("--surface"), line: v("--line"), law: v("--law"), decree: v("--decree"), rule: v("--rule"), prec: v("--prec"), ext: v("--ext"), cite: v("--cite"), sel: v("--sel"), body: v("--font-body") };
 }
+// 법 조문 원 위 조 번호 글자색: 원 색과의 대비가 더 큰 쪽(흰색 또는 상자 면 색)
+function onLaw(t) {
+  const lum = c => { const m = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * m[0] + .7152 * m[1] + .0722 * m[2]; };
+  const probe = document.createElement("i"); document.body.appendChild(probe);
+  const rgb = c => { probe.style.color = c; return getComputedStyle(probe).color; };
+  const l = lum(rgb(t.law)), dark = lum(rgb(t.bg)); probe.remove();
+  return (1.05 / (l + .05)) >= ((l + .05) / (dark + .05)) ? "#fff" : t.bg;
+}
+// 많이 축소하면 점·선이 1px 아래로 사라지므로, 확대 0.45배보다 작을 때는 그만큼 키워 화면에서의 크기를 유지한다
+let GROW = 1;
+const grow = v => () => v * GROW;
 function style(t) {
+  const lawText = onLaw(t);
   return [
-    { selector: "node", style: { width: "data(size)", height: "data(size)", "border-width": 0, label: "", "font-family": t.mono, "font-size": 5, color: t.fg, "min-zoomed-font-size": 7, "text-valign": "center", "text-halign": "center" } },
-    { selector: "node.L", style: { "background-color": t.law, label: "data(short)", color: "#fff", "font-size": 4, "text-outline-width": 0 } },
+    { selector: "node", style: { width: n => n.data("size") * GROW, height: n => n.data("size") * GROW, "border-width": 0, label: "", "font-family": t.body, "font-size": 5, color: t.fg, "min-zoomed-font-size": 7, "text-valign": "center", "text-halign": "center" } },
+    { selector: "node.L", style: { "background-color": t.law, label: "data(short)", color: lawText, "font-size": 4, "text-outline-width": 0 } },
     { selector: "node.D", style: { "background-color": t.decree, shape: "round-rectangle" } },
     { selector: "node.R", style: { "background-color": t.rule, shape: "round-triangle" } },
     { selector: "node.P", style: { "background-color": t.prec, shape: "diamond" } },
-    { selector: "node.X", style: { "background-color": t.ext, shape: "hexagon", label: "data(short)", "font-family": "IBM Plex Sans KR, sans-serif", "font-size": 6, color: t.muted, "text-valign": "bottom", "text-margin-y": 2 } },
+    { selector: "node.X", style: { "background-color": t.ext, shape: "hexagon", label: "data(short)", "font-size": 6, color: t.muted, "text-valign": "bottom", "text-margin-y": 2 } },
     { selector: "node.gone", style: { "background-opacity": 0.25, "border-width": 0.6, "border-color": t.muted, "border-style": "dashed", color: t.fg } },
-    { selector: "node.chapter", style: { label: "data(ch)", width: 1, height: 1, "background-opacity": 0, "font-family": "Nanum Myeongjo, serif", "font-weight": 700, "font-size": 9, color: t.muted, "text-wrap": "wrap", "text-max-width": 70, "text-background-color": t.bg, "text-background-opacity": 0.8, "text-background-padding": 2, events: "no", "min-zoomed-font-size": 4 } },
-    { selector: "edge", style: { "curve-style": "haystack", "haystack-radius": 0, width: 0.5, opacity: 0.22 } },
-    { selector: "edge.delegates", style: { "line-color": t.decree, width: 0.8, opacity: 0.45 } },
+    { selector: "node.chapter", style: { label: "data(ch)", width: 1, height: 1, "background-opacity": 0, "font-family": "Nanum Myeongjo, serif", "font-weight": 700, "font-size": 9, color: t.muted, "text-wrap": "wrap", "text-max-width": 70, "line-height": 1.3, "text-background-color": t.bg, "text-background-opacity": 0.8, "text-background-padding": 2, events: "no", "min-zoomed-font-size": 4 } },
+    { selector: "edge", style: { "curve-style": "haystack", "haystack-radius": 0, width: grow(0.5), opacity: 0.39 } },
+    { selector: "edge.delegates", style: { "line-color": t.decree, width: grow(0.8), opacity: 0.8 } },
     { selector: "edge.cites", style: { "line-color": t.cite } },
-    { selector: "edge.precedent", style: { "line-color": t.prec, opacity: 0.18 } },
-    { selector: "edge.external", style: { "line-color": t.ext, opacity: 0.35 } },
+    { selector: "edge.precedent", style: { "line-color": t.prec, opacity: 0.32 } },
+    { selector: "edge.external", style: { "line-color": t.ext, opacity: 0.62 } },
     { selector: ".faded", style: { opacity: 0.07 } },
     { selector: "edge.faded", style: { opacity: 0.02 } },
     { selector: "node.chapter.faded", style: { opacity: 0.25 } },
     { selector: "node.hl", style: { label: "data(short)", "font-size": 5, "text-valign": "bottom", "text-margin-y": 2, color: t.fg, "text-background-color": t.bg, "text-background-opacity": 0.85, "text-background-padding": 1 } },
-    { selector: "node.L.hl", style: { "text-valign": "center", "text-margin-y": 0, color: "#fff", "text-background-opacity": 0 } },
-    { selector: "edge.hl", style: { "curve-style": "straight", opacity: 0.9, width: 0.9, "target-arrow-shape": "triangle", "arrow-scale": 0.45 } },
+    { selector: "node.L.hl", style: { "text-valign": "center", "text-margin-y": 0, color: lawText, "text-background-opacity": 0 } },
+    { selector: "edge.hl", style: { "curve-style": "straight", opacity: 0.9, width: grow(0.9), "target-arrow-shape": "triangle", "arrow-scale": 0.45 } },
     { selector: "edge.hl.delegates", style: { "target-arrow-color": t.decree } },
     { selector: "edge.hl.cites", style: { "target-arrow-color": t.cite } },
     { selector: "edge.hl.precedent", style: { "target-arrow-color": t.prec } },
     { selector: "edge.hl.external", style: { "target-arrow-color": t.ext } },
-    { selector: "node.sel", style: { "border-width": 1.5, "border-color": t.sel, "border-style": "solid", "z-index": 10 } },
+    { selector: "node.sel", style: { "border-width": grow(1.5), "border-color": t.sel, "border-style": "solid", "z-index": 10 } },
   ];
 }
 
 const cy = cytoscape({
   container: document.getElementById("cy"),
   elements, layout: { name: "preset" }, style: style(tokens()),
-  minZoom: 0.05, maxZoom: 8, wheelSensitivity: 0.25, boxSelectionEnabled: false, autoungrabify: true,
+  minZoom: 0.01, maxZoom: 8, wheelSensitivity: 0.25, boxSelectionEnabled: false, autoungrabify: true,
 });
 const fitAll = (animate = false) => animate
   ? cy.animate({ fit: { eles: cy.elements(":visible"), padding: 16 }, duration: 300 })
   : cy.fit(cy.elements(":visible"), 16);
-const restyle = () => cy.style(style(tokens()));
+/* 장 이름은 확대와 상관없이 화면에서 11px로 보이게 하고, 이웃 장 이름과 겹치면 조문이 적은 장 쪽을 숨긴다 */
+function chapterLabels() {
+  const z = cy.zoom(), fs = Math.max(3, 11 / z);
+  const chs = cy.nodes(".chapter");
+  chs.style({ "font-size": fs, "text-max-width": fs * 8, "text-background-padding": fs * 0.2, "text-opacity": 1, "text-background-opacity": 0.8 });
+  const kept = [], gap = fs * 0.4;
+  const hit = (a, b) => a.x1 - gap < b.x2 && b.x1 - gap < a.x2 && a.y1 - gap < b.y2 && b.y1 - gap < a.y2;
+  chs.sort((a, b) => G.chapters[+b.id().slice(2)].count - G.chapters[+a.id().slice(2)].count).forEach(n => {
+    // 한글 한 글자를 대략 글자 크기만큼 넓다고 보고, text-max-width에서 줄바꿈되는 상자를 어림한다
+    const len = [...n.data("ch")].length, w = Math.min(len, 8) * fs, h = Math.ceil(len / 8) * fs * 1.3, p = n.position();
+    const bb = { x1: p.x - w / 2, x2: p.x + w / 2, y1: p.y - h / 2, y2: p.y + h / 2 };
+    if (kept.some(k => hit(k, bb))) n.style({ "text-opacity": 0, "text-background-opacity": 0 }); else kept.push(bb);
+  });
+}
+let growQueued = false;
+function updateGrow() {
+  const g = Math.max(1, 0.45 / cy.zoom());
+  if (Math.abs(g - GROW) / GROW < 0.05 || growQueued) return;
+  growQueued = true;
+  requestAnimationFrame(() => { GROW = Math.max(1, 0.45 / cy.zoom()); growQueued = false; cy.style().update(); });
+}
+cy.on("zoom", () => { chapterLabels(); updateGrow(); });
+const restyle = () => { cy.style(style(tokens())); chapterLabels(); };
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);
 new MutationObserver(restyle).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
@@ -326,6 +388,24 @@ kinds.forEach(k => document.getElementById("t-" + k).addEventListener("change", 
 let current = null;
 const panel = document.getElementById("panel");
 
+const narrow = matchMedia("(max-width: 960px)");
+const FOCUS_MAX = 2.5;
+// 선택한 조문과 이웃을 그래프 중 실제로 보이는 부분(화면 밖·바닥 시트 아래 제외)에 맞춘다. 연결이 적어도 FOCUS_MAX배 넘게 확대하지 않는다.
+function focusOn(eles) {
+  const box = cy.container().getBoundingClientRect();
+  const floor = panel.classList.contains("sheet") ? panel.getBoundingClientRect().top : innerHeight;
+  const top = Math.max(box.top, 0), bottom = Math.min(box.bottom, floor);
+  const vis = { y: top - box.top, w: box.width, h: Math.max(160, bottom - top) };
+  const bb = eles.boundingBox(), pad = 36;
+  const z = Math.min(FOCUS_MAX, (vis.w - 2 * pad) / Math.max(bb.w, 1), (vis.h - 2 * pad) / Math.max(bb.h, 1));
+  const pan = { x: vis.w / 2 - z * (bb.x1 + bb.w / 2), y: vis.y + vis.h / 2 - z * (bb.y1 + bb.h / 2) };
+  cy.animate({ zoom: z, pan, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 350 });
+}
+function setSheet(on) {
+  panel.classList.toggle("sheet", on);
+  document.body.classList.toggle("sheet-open", on);
+}
+
 function select(id, move = true) {
   current = id;
   const n = cy.$id(id);
@@ -335,12 +415,19 @@ function select(id, move = true) {
     hood.removeClass("faded").addClass("hl");
     n.addClass("sel");
   });
-  if (move) cy.animate({ fit: { eles: n.closedNeighborhood(":visible"), padding: 60 }, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 350 });
   renderNode(byId.get(id));
+  setSheet(narrow.matches);
+  if (!move) return;
+  if (narrow.matches) { // 그래프 윗부분을 화면 맨 위로 올려, 시트 위로 그래프가 보이게 한다
+    const t = cy.container().getBoundingClientRect().top;
+    if (Math.abs(t) > 4) window.scrollTo({ top: scrollY + t, behavior: "instant" });
+  }
+  focusOn(n.closedNeighborhood(":visible"));
 }
 function clearSel() {
   current = null;
   cy.elements().removeClass("faded hl sel");
+  setSheet(false);
   renderHome();
 }
 cy.on("tap", "node", e => { if (!e.target.hasClass("chapter")) select(e.target.id()); });
@@ -371,7 +458,7 @@ const sortPrec = l => l.sort((a, b) => (b[0].date || "").localeCompare(a[0].date
 function renderNode(n) {
   let html = "";
   if (isArt(n.kind)) {
-    html += `<div><div class="kindtag"><span class="chip" style="color:${color(n.kind)}">${KIND[n.kind].long}</span>${esc(n.chapter || "")}</div>
+    html += `<div><div class="kindtag"><span class="chip" style="--k:${color(n.kind)}">${KIND[n.kind].long}</span>${esc(n.chapter || "")}</div>
       <h2>${esc(n.label)}${n.title ? " (" + esc(n.title) + ")" : ""}</h2></div>`;
     if (n.ghost) html += `<p class="note">현행 법에는 이 번호의 조문이 없습니다. 판례가 개정 전 조문 번호로 인용한 것입니다.</p>`;
     else if (n.deleted) html += `<p class="note">현행 법에서 삭제된 조문입니다. 이 조문을 다룬 판례는 삭제 전 조문을 인용한 것입니다.</p>`;
@@ -383,17 +470,16 @@ function renderNode(n) {
     html += group("인용하는 다른 법령", neigh(n.id, "out", "external"));
     html += group("이 조문을 다룬 판례", sortPrec(neigh(n.id, "in", "precedent").map(([p]) => [p, p.court === "대법원" ? "대법원" : ""])), 15);
   } else if (n.kind === "P") {
-    html += `<div><div class="kindtag"><span class="chip" style="color:var(--prec)">${esc(n.court || "법원")}</span>${esc(fmtDate(n.date))} 선고 · ${esc(n.caseType || "")}</div>
+    html += `<div><div class="kindtag"><span class="chip" style="--k:var(--prec)">${esc(n.court || "법원")}</span>${esc(fmtDate(n.date))} 선고 · ${esc(n.caseType || "")}</div>
       <h2>${esc(n.label)}</h2><div class="note">${esc(n.title)}</div></div>`;
     if (n.text) html += `<section><h3>판시사항</h3><div class="lawtext">${esc(n.text)}</div></section>`;
     html += `<p class="note">조문 연결 근거: ${esc(n.basis)}${n.basis === "판례내용" ? " (판결문 본문에서 자동 추출)" : ""}. <a href="${esc(n.url)}" target="_blank" rel="noopener">판결문 보기 ↗</a></p>`;
     html += group("인용한 조문", sortArt(neigh(n.id, "out", "precedent")), 30);
   } else {
-    html += `<div><div class="kindtag"><span class="chip" style="color:var(--ext)">다른 법령</span></div><h2>${esc(n.label)}</h2></div>`;
+    html += `<div><div class="kindtag"><span class="chip" style="--k:var(--ext)">다른 법령</span></div><h2>${esc(n.label)}</h2></div>`;
     html += group("이 법령을 인용하는 조문", sortArt(neigh(n.id, "in", "external")));
   }
-  html += `<button class="btn" type="button" id="back">← 전체 요약으로</button>`;
-  panel.innerHTML = html;
+  panel.innerHTML = `<div><button class="btn" type="button" id="back">← 전체 요약으로</button></div>` + html;
   panel.scrollTop = 0;
 }
 
@@ -424,6 +510,12 @@ panel.addEventListener("click", e => {
 
 /* ---------- 검색 ---------- */
 const q = document.getElementById("q"), results = document.getElementById("results");
+const smallQ = matchMedia("(max-width: 600px)");
+q.dataset.long = q.placeholder;
+const setPlaceholder = () => { q.placeholder = smallQ.matches ? "조문·제목·사건번호 (예: 17, 영 3)" : q.dataset.long; };
+setPlaceholder();
+smallQ.addEventListener("change", setPlaceholder);
+narrow.addEventListener("change", () => setSheet(narrow.matches && current !== null));
 function search(s) {
   s = s.trim();
   if (!s) return [];
@@ -479,11 +571,13 @@ document.getElementById("stats").innerHTML = [
   `<span>위임 <b>${ecnt("delegates")}</b> · 조문 인용 <b>${ecnt("cites")}</b> · 판례 연결 <b>${ecnt("precedent")}</b></span>`;
 document.getElementById("foot").innerHTML = `
   <p><b>자료.</b> ${esc(M.source)}에서 ${tierList.map(k => `${esc(T[k].name)}(${d8(T[k].promul)} 공포)`).join(", ")}의 조문, 위임조문 3단비교, 판례를 받아 만들었습니다.</p>
-  <p><b>연결 만드는 방법.</b> 위임은 법제처 3단비교 자료를 그대로 썼습니다. 조문 인용은 조문 본문의 「법령명」 제N조, 같은 법, 법 제N조, 영 제N조 같은 표현을 규칙으로 읽어 냈습니다. 판례는 본문에 '${esc(MAIN)}'이 나오는 ${M.precedentsListed}건을 찾은 뒤, 참조조문(${M.precedentBasis["참조조문"]}건)·판시사항과 판결요지(${M.precedentBasis["판결요지"]}건)·판결문 본문(${M.precedentBasis["판례내용"]}건) 순으로 조문을 뽑았습니다. 조문을 찾지 못한 ${M.precedentBasis["없음"]}건은 대부분 다른 법이 쟁점인 사건이라 뺐습니다.</p>
+  <p><b>연결 만드는 방법.</b> 위임은 법제처 3단비교 자료를 그대로 썼습니다. 조문 인용은 조문 본문의 「법령명」 제N조, 같은 법, 법 제N조, 영 제N조 같은 표현을 규칙으로 읽어 냈습니다. 판례는 본문에 '${esc(MAIN)}'이 나오는 ${M.precedentsTotal > M.precedentsListed ? `${M.precedentsTotal.toLocaleString()}건 가운데 최근 선고된 ${M.precedentsListed.toLocaleString()}건(${esc(M.precedentsFrom)} 이후)` : M.precedentsListed + "건"}을 찾은 뒤${M.precedentsUnavailable ? `, 법제처가 본문을 주지 않는 ${M.precedentsUnavailable}건(대부분 하급심)을 빼고` : ""}, 참조조문(${M.precedentBasis["참조조문"]}건)·판시사항과 판결요지(${M.precedentBasis["판결요지"]}건)·판결문 본문(${M.precedentBasis["판례내용"]}건) 순으로 조문을 뽑았습니다. 조문을 찾지 못한 ${M.precedentBasis["없음"]}건은 대부분 다른 법이 쟁점인 사건이라 뺐습니다.</p>
   <p><b>주의.</b> 판례는 판결 당시 법의 조문 번호로 인용하므로, 개정으로 번호가 바뀐 조문은 현행 조문과 내용이 다를 수 있습니다. 자동 추출이라 빠지거나 잘못 잡힌 연결이 있을 수 있으니, 실무에는 원문을 확인해 주세요.</p>`;
 
 applyFilters();
 fitAll();
+chapterLabels();
+updateGrow();
 renderHome();
 </script>
 
